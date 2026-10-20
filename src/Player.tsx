@@ -103,11 +103,16 @@ export default forwardRef<PlayerHandle, Props>(function Player(
     onEnded,
   });
   callbacks.current = { onStarted, onPlaybackChange, onLoadingChange, onEnded };
-  function load(v: Video) {
+  function load(v: Video, gesture = false) {
     current.current = v;
     if (!ready.current) return;
     mutedAttempt.current = false;
     finished.current = "";
+    if (gesture) {
+      player.current.unMute?.();
+      player.current.setVolume?.(100);
+      setMuted(false);
+    }
     setError("");
     const alreadyPlaying =
       loaded.current === v.id && player.current.getPlayerState?.() === 1;
@@ -129,7 +134,7 @@ export default forwardRef<PlayerHandle, Props>(function Player(
   }
   // Called directly from a card click to retain user activation where supported.
   useImperativeHandle(ref, () => ({
-    select: (v) => load(v),
+    select: (v) => load(v, true),
     pause: () => player.current?.pauseVideo?.(),
   }));
   useEffect(() => {
@@ -159,7 +164,7 @@ export default forwardRef<PlayerHandle, Props>(function Player(
           videoId: current.current.id,
           playerVars: {
             autoplay: 1,
-            mute: 1,
+            mute: 0,
             playsinline: 1,
             origin: location.origin,
             rel: 0,
@@ -169,8 +174,9 @@ export default forwardRef<PlayerHandle, Props>(function Player(
               if (disposed) return;
               ready.current = true;
               clearTimeout(timeout);
-              player.current.mute?.();
-              setMuted(true);
+              player.current.unMute?.();
+              player.current.setVolume?.(100);
+              setMuted(false);
               load(current.current);
             },
             onStateChange: (e: any) => {
@@ -291,6 +297,7 @@ export default forwardRef<PlayerHandle, Props>(function Player(
           aria-label="Unmute video"
           onClick={() => {
             player.current?.unMute?.();
+            player.current?.setVolume?.(100);
             player.current?.playVideo?.();
             setMuted(false);
           }}

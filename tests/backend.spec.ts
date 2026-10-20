@@ -25,7 +25,7 @@ test("real hosting search returns videos through browser CORS", async ({
   await expect(page.locator(".v-card").first()).toContainText("Search result");
 });
 
-test("standard player starts muted, unmutes in one tap and preserves sound on selection", async ({
+test("standard player requests sound immediately and falls back to one-tap unmute only when blocked", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -47,6 +47,9 @@ test("standard player starts muted, unmutes in one tap and preserves sound on se
         }
         mute() {
           w.calls.push("mute");
+        }
+        setVolume(v: number) {
+          w.calls.push(`volume:${v}`);
         }
         unMute() {
           w.calls.push("unmute");
@@ -80,10 +83,13 @@ test("standard player starts muted, unmutes in one tap and preserves sound on se
   await expect
     .poll(() => page.evaluate(() => (window as any).calls))
     .toContain("load:aqz-KE-bpKQ");
-  await expect(
-    page.getByRole("button", { name: "Unmute video" }),
-  ).toBeVisible();
-  expect(await page.evaluate(() => (window as any).calls[0])).toBe("mute");
+  await expect(page.getByRole("button", { name: "Unmute video" })).toHaveCount(
+    0,
+  );
+  expect(await page.evaluate(() => (window as any).calls.slice(0, 2))).toEqual([
+    "unmute",
+    "volume:100",
+  ]);
   await page.evaluate(() => {
     (window as any).blockPlayback();
     (window as any).blockPlayback();
@@ -92,7 +98,7 @@ test("standard player starts muted, unmutes in one tap and preserves sound on se
     await page.evaluate(
       () => (window as any).calls.filter((v: string) => v === "mute").length,
     ),
-  ).toBe(2);
+  ).toBe(1);
   await expect(
     page.getByText("Your browser requires a tap to start this video."),
   ).toHaveCount(0);
@@ -108,7 +114,7 @@ test("standard player starts muted, unmutes in one tap and preserves sound on se
     await page.evaluate(
       () => (window as any).calls.filter((v: string) => v === "unmute").length,
     ),
-  ).toBe(1);
+  ).toBe(3);
   expect(mediaRequests).toEqual([]);
   await expect(page.locator(".player video")).toHaveCount(0);
   await page.getByRole("button", { name: "You", exact: true }).click();

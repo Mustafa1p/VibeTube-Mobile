@@ -18,7 +18,7 @@ VibeTube Mobile plays videos inside its own interface using YouTube's official e
 
 Install it on your Home Screen, accept the privacy notice, then search public YouTube videos, browse the collection or paste a video link. No developer API key is required.
 
-**Playback:** VibeTube uses only the standard YouTube player. Videos request muted playback immediately on selection. Tap **Unmute** once to enable sound; sound stays enabled when switching videos in the same player. Browser and video-owner restrictions can still prevent playback. The extra tap-to-play message is removed. Live search and channel-photo metadata use the hosting gateway. Google account sign-in and YouTube ad blocking are not provided.
+**Playback:** VibeTube uses only the standard YouTube player. Videos request playback with sound immediately after selection, explicitly enabling sound and setting volume to 100%. If the browser blocks audible autoplay, the player retries muted and offers **Unmute**. Browser and video-owner restrictions can still prevent playback. The extra tap-to-play message is removed. Live search and channel-photo metadata use the hosting gateway. Google account sign-in and YouTube ad blocking are not provided.
 
 | Capability                           | Current behavior                                                                |
 | ------------------------------------ | ------------------------------------------------------------------------------- |
@@ -46,7 +46,7 @@ An ordinary browser tab shows installation instructions only. Installation butto
 
 ### Updating an existing installation
 
-When the centered **A playback update is ready** popup appears, tap **Update now**. VibeTube stops the player, applies the update and reloads automatically. **Later** keeps the current session; the popup returns when you reopen the app. Saved music and videos remain on this device. About should display **VibeTube Mobile 3.5.0**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.5.0) to fetch the latest installation shell. Updates do not require a new API key or Google login.
+When the centered **A playback update is ready** popup appears, tap **Update now**. VibeTube stops the player, applies the update and reloads automatically. **Later** keeps the current session; the popup returns when you reopen the app. Saved music and videos remain on this device. About should display **VibeTube Mobile 3.5.1**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.5.1) to fetch the latest installation shell. Updates do not require a new API key or Google login.
 
 The installed app locks page zoom and uses 16px text-entry fields to avoid search-focus enlargement. Normal scrolling remains available. See [mobile viewport verification](docs/MOBILE-VIEWPORT.md).
 
