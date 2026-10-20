@@ -27,6 +27,7 @@ Install it on your Home Screen, accept the privacy notice, then search public Yo
 | Search                               | Live public-video search through the hosted gateway; optional local-only search |
 | Channel photos                       | Real channel images, loaded lazily and cached, with initials as fallback |
 | Saved videos / Watch later           | Stored locally on this device                                              |
+| Music collection                    | Artwork, titles, editable artists, play/pause and a queue; saved locally |
 | History / resume                     | Recorded from real player events where the provider exposes position       |
 | Account sign-in                      | **Unavailable.** The app does not pretend to synchronize a YouTube account |
 | Whole YouTube feed / account website | Not embedded; no claim of personalized recommendations or full-site access |
@@ -45,11 +46,19 @@ An ordinary browser tab shows installation instructions only. Installation butto
 
 ### Updating an existing installation
 
-Close the player, tap **Update now** when it appears, then reopen the Home Screen app. About should display **VibeTube Mobile 3.3.1**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.3.1) to fetch the latest installation shell. Updates do not require a new API key or Google login.
+Close the player, tap **Update now** when it appears, then reopen the Home Screen app. About should display **VibeTube Mobile 3.4.0**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.4) to fetch the latest installation shell. Updates do not require a new API key or Google login.
 
 The installed app locks page zoom and uses 16px text-entry fields to avoid search-focus enlargement. Normal scrolling remains available. See [mobile viewport verification](docs/MOBILE-VIEWPORT.md).
 
 ## Screens
+
+### Your music collection
+
+Tap **Add to music** on a search result or video page. Open **Music** beside Home to find saved tracks as rows with artwork, title, artist and play/pause controls. Play all, next/previous and automatic advancement use the same standard YouTube player. Song titles and artists can be edited from each row's options. Entries stay on this device; the library does not download audio or synchronize a Google account.
+
+The music view keeps YouTube's player visible. True audio-only and background playback are unavailable. See [music behavior and verification](docs/MUSIC.md).
+
+![Music collection with artwork, song titles and artist names](docs/screenshots/music-library.png)
 
 | Collection                                            | In-app player                                           | Local library                                         |
 | ----------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- |

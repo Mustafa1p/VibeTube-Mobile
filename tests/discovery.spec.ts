@@ -51,7 +51,10 @@ test("music feed, keyboard suggestions, pagination and compact recommendations",
   await page.goto("");
   await page.getByRole("button", { name: "Agree & start watching" }).click();
   await expect(page.locator(".v-card")).toHaveCount(20);
-  await page.getByRole("button", { name: "Music", exact: true }).click();
+  await page
+    .locator(".v-chips")
+    .getByRole("button", { name: "Music", exact: true })
+    .click();
   await expect(page.locator(".v-card")).toHaveCount(20);
   await page
     .getByRole("button", { name: "Load more videos", exact: true })

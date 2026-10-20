@@ -14,7 +14,7 @@ import { usePlatform } from "./platform";
 import { useAppViewport } from "./useAppViewport";
 const Videos = lazy(() => import("./VideoApp"));
 const base = import.meta.env.BASE_URL;
-const release = "3.3.1";
+const release = "3.4.0";
 export default function App() {
   const platform = usePlatform();
   useAppViewport(platform.installed);
@@ -330,9 +330,9 @@ export default function App() {
             needed.
           </p>
           <p>
-            Saved videos, playlists, history and playback positions stay in this
-            browser. They do not sync with a YouTube account. Full YouTube
-            account sign-in is not available in this embedded-player
+            Saved videos, music, playlists, history and playback positions stay
+            in this browser. They do not sync with a YouTube account. Full
+            YouTube account sign-in is not available in this embedded-player
             architecture.
           </p>
           <p>

@@ -1,5 +1,7 @@
 # In-app playback verification — 20 October 2026
 
+Release 3.4 adds a locally saved Music collection, Add to music actions, artwork/title/artist rows, editable details and standard-player queue controls. [Music verification](MUSIC.md) distinguishes the three deterministic music tests, their WebKit results and the separate actual-media check. Earlier records below describe prior releases.
+
 Current release 3.3 uses only the standard player, retires custom media and sponsor skipping, removes the extra tap prompt, retries blocked autoplay muted and adds actual channel photos. See [standard-player verification](STANDARD-PLAYER.md). Older release records below describe historical behavior.
 
 Release 3.2 discovery fixes and current published observations are recorded in [Discovery fix](DISCOVERY-FIX.md) and [Deployment](DEPLOYMENT.md). Ten deterministic Chromium checks and two targeted WebKit checks passed; Home/Music feeds, autocomplete, pagination, compact recommendations and playback on selection were also checked against the published site.

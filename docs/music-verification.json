@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-20T03:39:12.539Z",
+  "url": "http://127.0.0.1:4175/VibeTube-Mobile/",
+  "savedTracks": 2,
+  "editedArtist": "Elektronomia",
+  "persistedAfterReload": true,
+  "firstTrackPlaybackSeconds": 1.498173,
+  "pauseAndResume": true,
+  "nextTrackSelected": true,
+  "samePlayer": true,
+  "playerWidth": 354,
+  "playerHeight": 200,
+  "route": "#music",
+  "uncaughtErrors": [],
+  "physicalIPhone": "UNVERIFIED",
+  "audioOnly": false
+}

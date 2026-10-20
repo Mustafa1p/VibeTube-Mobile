@@ -47,6 +47,7 @@ export const warmPlayer = () => {
 };
 export interface PlayerHandle {
   select: (video: Video) => void;
+  pause: () => void;
 }
 interface Props {
   video: Video;
@@ -54,10 +55,22 @@ interface Props {
   onExpand: () => void;
   onClose: () => void;
   onStarted: (v: Video) => void;
+  onPlaybackChange?: (playing: boolean) => void;
+  onEnded?: () => void;
+  musicDock?: boolean;
 }
 
 export default forwardRef<PlayerHandle, Props>(function Player(
-  { video, expanded, onExpand, onClose, onStarted },
+  {
+    video,
+    expanded,
+    onExpand,
+    onClose,
+    onStarted,
+    onPlaybackChange,
+    onEnded,
+    musicDock,
+  },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null),
@@ -65,16 +78,20 @@ export default forwardRef<PlayerHandle, Props>(function Player(
     current = useRef(video),
     ready = useRef(false),
     loaded = useRef(""),
-    mutedAttempt = useRef(false);
+    mutedAttempt = useRef(false),
+    finished = useRef("");
   const [error, setError] = useState(""),
     [playing, setPlaying] = useState(false),
     [muted, setMuted] = useState(false),
     [retry, setRetry] = useState(0);
   current.current = video;
+  const callbacks = useRef({ onStarted, onPlaybackChange, onEnded });
+  callbacks.current = { onStarted, onPlaybackChange, onEnded };
   function load(v: Video, gesture = false) {
     current.current = v;
     if (!ready.current) return;
     mutedAttempt.current = false;
+    finished.current = "";
     if (gesture) {
       player.current.unMute?.();
       setMuted(false);
@@ -91,7 +108,10 @@ export default forwardRef<PlayerHandle, Props>(function Player(
     });
   }
   // Called directly from a card click to retain user activation where supported.
-  useImperativeHandle(ref, () => ({ select: (v) => load(v, true) }));
+  useImperativeHandle(ref, () => ({
+    select: (v) => load(v, true),
+    pause: () => player.current?.pauseVideo?.(),
+  }));
   useEffect(() => {
     let disposed = false;
     ready.current = false;
@@ -131,9 +151,20 @@ export default forwardRef<PlayerHandle, Props>(function Player(
             onStateChange: (e: any) => {
               if (disposed) return;
               setPlaying(e.data === 1);
+              callbacks.current.onPlaybackChange?.(e.data === 1);
               if (e.data === 1) {
                 setError("");
-                onStarted(current.current);
+                callbacks.current.onStarted(current.current);
+              }
+              const endedId =
+                e.target?.getVideoData?.()?.video_id || loaded.current;
+              if (
+                e.data === 0 &&
+                endedId === loaded.current &&
+                finished.current !== endedId
+              ) {
+                finished.current = endedId;
+                callbacks.current.onEnded?.();
               }
             },
             onError: (e: any) => {
@@ -189,7 +220,11 @@ export default forwardRef<PlayerHandle, Props>(function Player(
   }, [video.id]);
   return (
     <section
-      className={"player " + (expanded ? "expanded" : "mini")}
+      className={
+        "player " +
+        (expanded ? "expanded" : "mini") +
+        (musicDock ? " music-dock" : "")
+      }
       aria-label="Video player"
     >
       <div className="player-heading">
@@ -229,7 +264,9 @@ export default forwardRef<PlayerHandle, Props>(function Player(
       )}
       {!expanded && (
         <div className="mini-caption">
-          <button onClick={onExpand}>Continue watching</button>
+          <button onClick={onExpand}>
+            {musicDock ? "Open video" : "Continue watching"}
+          </button>
           <button
             aria-label={playing ? "Pause video" : "Play video"}
             onClick={() => {

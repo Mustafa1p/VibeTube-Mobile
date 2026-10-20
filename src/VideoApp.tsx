@@ -11,6 +11,7 @@ import {
   ListVideo,
   ArrowLeft,
   X,
+  Music2,
 } from "lucide-react";
 import Player, { warmPlayer, type PlayerHandle } from "./Player";
 import ChannelAvatar from "./ChannelAvatar";
@@ -22,6 +23,7 @@ import BackendSettings from "./BackendSettings";
 import { liveSearchEnabled } from "./backend";
 import { useDiscovery } from "./useDiscovery";
 import SearchSuggestions from "./SearchSuggestions";
+import MusicLibrary, { type MusicTrack } from "./MusicLibrary";
 const base = import.meta.env.BASE_URL;
 function getRoute() {
   try {
@@ -38,6 +40,9 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
     [category, setCategory] = useState("All"),
     [saved, setSaved] = useState<Video[]>(() => read("saved", [])),
     [recent, setRecent] = useState<Video[]>(() => read("history", [])),
+    [music, setMusic] = useState<MusicTrack[]>(() => read("music", [])),
+    [musicSession, setMusicSession] = useState(false),
+    [isPlaying, setIsPlaying] = useState(false),
     [playlists, setPlaylists] = useState<Record<string, Video[]>>(() =>
       read("playlists", { "Watch later": [] }),
     ),
@@ -102,10 +107,40 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
     };
   }, [route, active?.id, allowed]);
   const watch = !!active && route === "watch/" + active.id;
-  const play = (v: Video) => {
+  const play = (v: Video, asMusic = false, navigate = true) => {
+    setIsPlaying(false);
+    setMusicSession(asMusic);
     playerControl.current?.select(v);
     setActive(v);
-    nav("watch/" + v.id);
+    if (navigate) nav(asMusic ? "music" : "watch/" + v.id);
+  };
+  const addMusic = (v: Video) => {
+    if (music.some((t) => t.video.id === v.id)) {
+      setMessage("Already in your music collection");
+      return;
+    }
+    if (music.length >= 200) {
+      setMessage(
+        "Your music collection is full. Remove a track to add another.",
+      );
+      return;
+    }
+    const tracks = [{ video: v, title: v.title, artist: v.channel }, ...music];
+    if (write("music", tracks)) {
+      setMusic(tracks);
+      setMessage("Added to music");
+    } else setMessage("Storage is full. Could not add this track.");
+  };
+  const stepMusic = (offset: number, navigate = true) => {
+    const index = music.findIndex((t) => t.video.id === active?.id);
+    const next = music[index + offset];
+    if (index >= 0 && next) play(next.video, true, navigate);
+  };
+  const browseMusic = () => {
+    setQuery("music");
+    setSearchTerm("music");
+    setSuggesting(false);
+    nav("search");
   };
   const save = (v: Video) => {
     const exists = saved.some((x) => x.id === v.id);
@@ -194,6 +229,16 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                 ? "YouTube · Search result"
                 : "YouTube · Video"}
             </small>
+            <button
+              className="v-add-music"
+              onClick={() => addMusic(v)}
+              aria-label={`Add to music: ${v.title}`}
+            >
+              <Music2 size={16} />
+              {music.some((t) => t.video.id === v.id)
+                ? "In music"
+                : "Add to music"}
+            </button>
           </div>
           <button
             className="v-save"
@@ -282,12 +327,46 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
               ref={playerControl}
               video={active}
               expanded={watch}
+              musicDock={route === "music"}
               onExpand={() => nav(watch ? "home" : "watch/" + active.id)}
               onClose={() => {
                 setActive(null);
+                setIsPlaying(false);
+                setMusicSession(false);
                 if (watch) nav("home");
               }}
               onStarted={started}
+              onPlaybackChange={setIsPlaying}
+              onEnded={() => {
+                const screen = document
+                  .querySelector(".player-screen")
+                  ?.getBoundingClientRect();
+                const viewport = window.visualViewport;
+                const top = viewport?.offsetTop || 0,
+                  left = viewport?.offsetLeft || 0;
+                const width = viewport?.width || innerWidth,
+                  height = viewport?.height || innerHeight;
+                const visible = screen
+                  ? Math.max(
+                      0,
+                      Math.min(screen.right, left + width) -
+                        Math.max(screen.left, left),
+                    ) *
+                    Math.max(
+                      0,
+                      Math.min(screen.bottom, top + height) -
+                        Math.max(screen.top, top),
+                    )
+                  : 0;
+                if (
+                  musicSession &&
+                  !document.hidden &&
+                  !document.querySelector("dialog[open]") &&
+                  screen &&
+                  visible > (screen.width * screen.height) / 2
+                )
+                  stepMusic(1, false);
+              }}
             />
           )}
           <main className="v-main">
@@ -345,6 +424,47 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                   setLiveSearch(liveSearchEnabled());
                 }}
               />
+            ) : route === "music" ? (
+              <MusicLibrary
+                tracks={music}
+                activeId={active?.id}
+                playing={isPlaying}
+                onBrowse={browseMusic}
+                onPlay={(track) => {
+                  if (active?.id === track.video.id && isPlaying) {
+                    setMusicSession(true);
+                    playerControl.current?.pause();
+                  } else play(track.video, true);
+                }}
+                onStep={stepMusic}
+                onRemove={(id) => {
+                  const next = music.filter((t) => t.video.id !== id);
+                  if (write("music", next)) {
+                    setMusic(next);
+                    if (musicSession && active?.id === id) {
+                      setActive(null);
+                      setIsPlaying(false);
+                      setMusicSession(false);
+                    }
+                    setMessage("Removed from music");
+                  } else setMessage("Could not update your music collection.");
+                }}
+                onEdit={(id, title, artist) => {
+                  if (!title || !artist) {
+                    setMessage("Enter a song title and artist.");
+                    return false;
+                  }
+                  const next = music.map((t) =>
+                    t.video.id === id ? { ...t, title, artist } : t,
+                  );
+                  if (!write("music", next)) {
+                    setMessage("Could not save song details.");
+                    return false;
+                  }
+                  setMusic(next);
+                  return true;
+                }}
+              />
             ) : watch && active ? (
               <section className="v-watch">
                 <h1>{active.title}</h1>
@@ -360,6 +480,12 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                   <button onClick={() => addLater(active)}>
                     <Plus size={18} />
                     Watch later
+                  </button>
+                  <button onClick={() => addMusic(active)}>
+                    <Music2 size={18} />
+                    {music.some((t) => t.video.id === active.id)
+                      ? "In music"
+                      : "Add to music"}
                   </button>
                   <button
                     onClick={() =>
@@ -574,6 +700,13 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
             >
               <Home />
               <span>Home</span>
+            </button>
+            <button
+              aria-current={route === "music" ? "page" : undefined}
+              onClick={() => nav("music")}
+            >
+              <Music2 />
+              <span>Music</span>
             </button>
             <button
               aria-current={route === "search" ? "page" : undefined}
