@@ -114,20 +114,36 @@ $rate = json_decode(stream_get_contents($f), true) ?: ['start' => time(), 'count
 if (time() - $rate['start'] > 60) $rate = ['start' => time(), 'count' => 0];
 $rate['count']++;
 ftruncate($f, 0); rewind($f); fwrite($f, json_encode($rate)); flock($f, LOCK_UN); fclose($f);
-if ($rate['count'] > 12) reply(['error' => 'Please wait before making more requests.'], 429);
+if ($rate['count'] > 90) reply(['error' => 'Please wait before making more requests.'], 429);
+if ($action === 'suggest') {
+    $q = $_GET['q'] ?? '';
+    if (!is_string($q) || mb_strlen(trim($q)) < 2 || mb_strlen($q) > 100) reply(['suggestions' => []]);
+    $lang = $_GET['lang'] ?? 'en';
+    if (!is_string($lang) || !preg_match('/^[a-z]{2}(?:-[A-Za-z]{2})?$/D', $lang)) $lang = 'en';
+    $ch = curl_init('https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&hl=' . rawurlencode($lang) . '&q=' . rawurlencode(trim($q)));
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 6, CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+        CURLOPT_SSL_VERIFYPEER => true, CURLOPT_HTTPHEADER => ['Accept: application/json']]);
+    $raw = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE); curl_close($ch);
+    $d = is_string($raw) ? json_decode($raw, true) : null;
+    if ($code !== 200 || !is_array($d[1] ?? null)) reply(['error' => 'Search suggestions are temporarily unavailable. You can still submit your search.'], 502);
+    reply(['suggestions' => array_slice(array_values(array_filter($d[1], fn($v) => is_string($v) && mb_strlen($v) <= 150)), 0, 8)]);
+}
 if ($action === 'search') {
     $q = $_GET['q'] ?? '';
-    if (!is_string($q) || strlen(trim($q)) < 1 || strlen($q) > 200) reply(['error' => 'Enter a search up to 200 bytes.'], 400);
+    if (!is_string($q) || mb_strlen(trim($q)) < 1 || mb_strlen($q) > 200) reply(['error' => 'Enter a search up to 200 characters.'], 400);
+    $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 5]]);
+    if ($page === false) reply(['error' => 'Invalid results page.'], 400);
     $searchDir = "$runtime/search";
     if (!is_dir($searchDir)) mkdir($searchDir, 0700);
-    $cache = "$searchDir/" . hash('sha256', trim($q)) . '.json';
+    $cache = "$searchDir/" . hash('sha256', 'v2:' . $page . ':' . trim($q)) . '.json';
     if (is_file($cache) && filemtime($cache) > time() - 300) {
         $cached = json_decode(file_get_contents($cache), true);
         if (is_array($cached)) reply($cached);
     }
-    $d = extractVideo(['--flat-playlist', 'ytsearch8:' . trim($q)]);
+    $d = extractVideo(['--flat-playlist', '--playlist-start', (string)(($page - 1) * 20 + 1), 'ytsearch' . ($page * 20) . ':' . trim($q)]);
     $items = [];
-    foreach (array_slice($d['entries'] ?? [], 0, 8) as $v) {
+    foreach (array_slice($d['entries'] ?? [], 0, 20) as $v) {
         if (!preg_match('/^[\w-]{11}$/D', $v['id'] ?? '')) continue;
         $items[] = ['id' => $v['id'], 'title' => mb_substr($v['title'] ?? 'Video', 0, 300),
             'channel' => mb_substr($v['channel'] ?? $v['uploader'] ?? 'YouTube', 0, 150), 'category' => 'Videos'];
@@ -135,9 +151,10 @@ if ($action === 'search') {
     $files = glob("$searchDir/*.json") ?: [];
     usort($files, fn($a, $b) => filemtime($a) <=> filemtime($b));
     while (count($files) >= 100) unlink(array_shift($files));
-    file_put_contents($cache, json_encode(['items' => $items]), LOCK_EX);
+    $payload = ['items' => $items, 'page' => $page, 'hasMore' => count($items) === 20 && $page < 5];
+    file_put_contents($cache, json_encode($payload), LOCK_EX);
     chmod($cache, 0600);
-    reply(['items' => $items]);
+    reply($payload);
 }
 if ($action !== 'video') reply(['error' => 'Unknown endpoint.'], 404);
 $id = $_GET['id'] ?? '';

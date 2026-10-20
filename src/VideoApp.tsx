@@ -18,7 +18,9 @@ import type { Video } from "./data";
 import { read, write } from "./storage";
 import "./video.css";
 import BackendSettings from "./BackendSettings";
-import { backendEnabled, searchBackend, liveSearchEnabled } from "./backend";
+import { backendEnabled, liveSearchEnabled } from "./backend";
+import { useDiscovery } from "./useDiscovery";
+import SearchSuggestions from "./SearchSuggestions";
 const base = import.meta.env.BASE_URL;
 function getRoute() {
   try {
@@ -42,10 +44,29 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
     [loading, setLoading] = useState(false),
     [useBackend, setUseBackend] = useState(backendEnabled),
     [liveSearch, setLiveSearch] = useState(liveSearchEnabled),
-    [results, setResults] = useState<Video[]>([]),
     [searchTerm, setSearchTerm] = useState(""),
-    [searchRequest, setSearchRequest] = useState(0),
+    [suggesting, setSuggesting] = useState(false),
     [allowed, setAllowed] = useState(() => read("video-consent", false));
+  const topics: Record<string, string> = {
+    All: "popular videos",
+    Music: "official music video",
+    Films: "short film",
+    Nature: "nature documentary",
+    Technology: "technology",
+  };
+  const feed = useDiscovery(
+    allowed && liveSearch && route === "home"
+      ? topics[category] || topics.All
+      : "",
+  );
+  const search = useDiscovery(
+    allowed && liveSearch && route === "search" ? searchTerm : "",
+  );
+  const related = useDiscovery(
+    allowed && liveSearch && active && route === "watch/" + active.id
+      ? active.channel + (active.category === "Films" ? " short films" : "")
+      : "",
+  );
   const nav = (v: string) => {
     location.hash = encodeURIComponent(v);
   };
@@ -78,26 +99,6 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
       setLoading(false);
     };
   }, [route, active?.id, allowed, useBackend]);
-  useEffect(() => {
-    if (!liveSearch || !allowed || route !== "search" || !searchTerm) return;
-    const c = new AbortController();
-    setLoading(true);
-    setResults([]);
-    searchBackend(searchTerm, c.signal)
-      .then((items) => {
-        if (!c.signal.aborted) setResults(items);
-      })
-      .catch((e) => {
-        if (!c.signal.aborted) setMessage(e.message);
-      })
-      .finally(() => {
-        if (!c.signal.aborted) setLoading(false);
-      });
-    return () => {
-      c.abort();
-      setLoading(false);
-    };
-  }, [route, searchTerm, searchRequest, liveSearch, allowed]);
   const watch = !!active && route === "watch/" + active.id;
   const play = (v: Video) => {
     setActive({ ...v, provider: useBackend ? "backend" : undefined });
@@ -113,14 +114,20 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
       setMessage(exists ? "Removed from saved videos" : "Saved on this device");
     } else setMessage("Storage is full. Could not save this video.");
   };
-  const submit = () => {
-    const q = query.trim().slice(0, 200);
+  const submit = (value = query) => {
+    const q = value.trim().slice(0, 200);
     if (!q) return;
     const id = videoId(q);
     nav(id ? "watch/" + id : "search");
     setQuery(q);
+    setSuggesting(false);
+    const history = read<string[]>("search-history", []);
+    write(
+      "search-history",
+      [q, ...history.filter((s) => s !== q)].slice(0, 20),
+    );
+    if (q === searchTerm) search.retry();
     setSearchTerm(q);
-    setSearchRequest((n) => n + 1);
   };
   const started = (v: Video) =>
     setRecent((old) => {
@@ -136,17 +143,19 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
         : route.startsWith("playlist/")
           ? playlists[route.slice(9)] || []
           : route === "search" && liveSearch
-            ? results
-            : catalog.filter(
-                (v) =>
-                  (category === "All" ||
-                    route === "search" ||
-                    v.category === category) &&
-                  (route !== "search" ||
-                    (v.title + " " + v.channel + " " + v.category)
-                      .toLowerCase()
-                      .includes(query.toLowerCase())),
-              );
+            ? search.items
+            : route === "home" && liveSearch && feed.items.length
+              ? feed.items
+              : catalog.filter(
+                  (v) =>
+                    (category === "All" ||
+                      route === "search" ||
+                      v.category === category) &&
+                    (route !== "search" ||
+                      (v.title + " " + v.channel + " " + v.category)
+                        .toLowerCase()
+                        .includes(query.toLowerCase())),
+                );
   const addLater = (v: Video) => {
     const p = {
       ...playlists,
@@ -208,7 +217,13 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
           VibeTube
         </button>
         <div>
-          <button aria-label="Search collection" onClick={() => nav("search")}>
+          <button
+            aria-label="Search videos"
+            onClick={() => {
+              setSuggesting(true);
+              nav("search");
+            }}
+          >
             <Search />
           </button>
           <button aria-label="About and settings" onClick={onAbout}>
@@ -269,6 +284,11 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                 if (watch) nav("home");
               }}
               onStarted={started}
+              onUseEmbedded={() => {
+                write("experimental-media", false);
+                setUseBackend(false);
+                setActive({ ...active, provider: undefined });
+              }}
             />
           )}
           <main className="v-main">
@@ -283,14 +303,35 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                   <input
                     autoFocus
                     aria-label="Search videos or paste a YouTube link"
+                    aria-controls="search-suggestions"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setSuggesting(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setSuggesting(false);
+                      if (e.key === "ArrowDown") {
+                        document
+                          .getElementById("search-suggestions")
+                          ?.querySelector("button")
+                          ?.focus();
+                        e.preventDefault();
+                      }
+                    }}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      setSuggesting(true);
+                    }}
                     placeholder="Search videos or paste a YouTube link"
                   />
                   <button aria-label="Submit search">
                     <Search />
                   </button>
                 </form>
+                <SearchSuggestions
+                  value={query}
+                  enabled={liveSearch && suggesting}
+                  onSelect={submit}
+                  onDismiss={() => setSuggesting(false)}
+                />
                 <p>
                   {liveSearch
                     ? "Search public YouTube videos through VibeTube’s server, or paste a video link."
@@ -304,7 +345,6 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                   setActive(null);
                   setUseBackend(backendEnabled());
                   setLiveSearch(liveSearchEnabled());
-                  setResults([]);
                 }}
               />
             ) : watch && active ? (
@@ -333,13 +373,28 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                     Description
                   </button>
                 </div>
-                <h2>More to discover</h2>
-                <div className="v-grid">
-                  {catalog
+                <h2>More to watch</h2>
+                {related.loading && <p role="status">Finding more videos…</p>}
+                {related.error && (
+                  <div className="v-request-error" role="alert">
+                    <p>{related.error}</p>
+                    <button onClick={related.retry}>Retry suggestions</button>
+                  </div>
+                )}
+                <div className="v-grid v-related">
+                  {(related.items.length ? related.items : catalog)
                     .filter((v) => v.id !== active.id)
-                    .slice(0, 6)
                     .map(card)}
                 </div>
+                {related.hasMore && (
+                  <button
+                    className="v-load-more"
+                    disabled={related.loading}
+                    onClick={related.more}
+                  >
+                    More videos
+                  </button>
+                )}
               </section>
             ) : route === "library" ? (
               <section className="v-library">
@@ -402,19 +457,23 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                 {route === "home" && (
                   <>
                     <div className="v-chips">
-                      {["All", "Films", "Nature", "Technology"].map((c) => (
-                        <button
-                          key={c}
-                          aria-pressed={category === c}
-                          onClick={() => setCategory(c)}
-                        >
-                          {c}
-                        </button>
-                      ))}
+                      {["All", "Music", "Films", "Nature", "Technology"].map(
+                        (c) => (
+                          <button
+                            key={c}
+                            aria-pressed={category === c}
+                            onClick={() => setCategory(c)}
+                          >
+                            {c}
+                          </button>
+                        ),
+                      )}
                     </div>
                     <div className="v-feed-title">
                       <h1>Find your next favorite.</h1>
-                      <small>Curated collection</small>
+                      <small>
+                        {liveSearch ? "Discover videos" : "Local collection"}
+                      </small>
                     </div>
                   </>
                 )}
@@ -436,22 +495,76 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                     </h1>
                   </div>
                 ) : null}
-                {loading && (
-                  <p role="status" className="v-loading">
-                    Loading video…
-                  </p>
-                )}
-                <div className="v-grid">{list.map(card)}</div>
-                {!list.length && !loading && (
-                  <div className="v-empty">
-                    <h2>No videos here yet</h2>
+                {!liveSearch && ["home", "search"].includes(route) && (
+                  <div className="v-request-error">
                     <p>
-                      {route === "search"
-                        ? "Try a title from the collection or paste a YouTube video link."
-                        : "Save a video or explore the collection to get started."}
+                      Live search is off. Only the saved collection is shown.
                     </p>
+                    <button
+                      onClick={() => {
+                        write("live-search", true);
+                        setLiveSearch(true);
+                      }}
+                    >
+                      Enable live search
+                    </button>
                   </div>
                 )}
+                {(loading ||
+                  (route === "home"
+                    ? feed.loading
+                    : route === "search" && search.loading)) && (
+                  <p role="status" className="v-loading">
+                    Loading videos…
+                  </p>
+                )}
+                {(route === "home"
+                  ? feed.error
+                  : route === "search"
+                    ? search.error
+                    : "") && (
+                  <div className="v-request-error" role="alert">
+                    <p>
+                      {route === "home"
+                        ? `${feed.error} Showing the offline collection until you retry.`
+                        : search.error}
+                    </p>
+                    <button
+                      onClick={route === "home" ? feed.retry : search.retry}
+                    >
+                      Retry loading videos
+                    </button>
+                  </div>
+                )}
+                <div className="v-grid">{list.map(card)}</div>
+                {(route === "home"
+                  ? feed.hasMore
+                  : route === "search" && search.hasMore) && (
+                  <button
+                    className="v-load-more"
+                    disabled={route === "home" ? feed.loading : search.loading}
+                    onClick={route === "home" ? feed.more : search.more}
+                  >
+                    Load more videos
+                  </button>
+                )}
+                {!list.length &&
+                  !loading &&
+                  !search.loading &&
+                  !feed.loading && (
+                    <div className="v-empty">
+                      <h2>
+                        {route === "search" && !searchTerm
+                          ? "What do you want to watch?"
+                          : "No videos here yet"}
+                      </h2>
+                      <p>
+                        {route === "search"
+                          ? "Search for music, a creator or a video title, or paste a YouTube link."
+                          : "Save a video or explore the collection to get started."}
+                      </p>
+                    </div>
+                  )}
               </>
             )}
           </main>
@@ -465,7 +578,10 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
             </button>
             <button
               aria-current={route === "search" ? "page" : undefined}
-              onClick={() => nav("search")}
+              onClick={() => {
+                setSuggesting(true);
+                nav("search");
+              }}
             >
               <Search />
               <span>Search</span>

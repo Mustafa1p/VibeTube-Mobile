@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { normalizeSegments } from "../src/enhancements/sponsorBlock";
+import { readFileSync } from "node:fs";
+const catalog = JSON.parse(readFileSync("src/catalog.json", "utf8"));
 
 test("real hosting search returns videos through browser CORS", async ({
   page,
@@ -15,7 +17,7 @@ test("real hosting search returns videos through browser CORS", async ({
   await page.goto("");
   await page.getByRole("button", { name: "Agree & start watching" }).click();
   await page
-    .getByRole("button", { name: "Search collection", exact: true })
+    .getByRole("button", { name: "Search videos", exact: true })
     .click();
   await page.getByRole("textbox").fill("Blender open movie");
   await page.getByRole("button", { name: "Submit search" }).click();
@@ -64,14 +66,17 @@ test("live search renders results and failed extraction recovers to embedded pla
         body: JSON.stringify(
           action === "search"
             ? {
-                items: [
-                  {
-                    id: "WhWc3b3KhnY",
-                    title: "Spring - Blender Open Movie",
-                    channel: "Blender Studio",
-                    category: "Videos",
-                  },
-                ],
+                items:
+                  u.searchParams.get("q") === "popular videos"
+                    ? catalog
+                    : [
+                        {
+                          id: "WhWc3b3KhnY",
+                          title: "Spring - Blender Open Movie",
+                          channel: "Blender Studio",
+                          category: "Videos",
+                        },
+                      ],
               }
             : action === "health"
               ? { runtime: true }
@@ -83,7 +88,7 @@ test("live search renders results and failed extraction recovers to embedded pla
   await page.goto("");
   await page.getByRole("button", { name: "Agree & start watching" }).click();
   await page
-    .getByRole("button", { name: "Search collection", exact: true })
+    .getByRole("button", { name: "Search videos", exact: true })
     .click();
   await page.getByRole("textbox").fill("Blender open movie");
   await page.getByRole("button", { name: "Submit search" }).click();

@@ -41,12 +41,14 @@ export default function Player({
   onExpand,
   onClose,
   onStarted,
+  onUseEmbedded,
 }: {
   video: Video;
   expanded: boolean;
   onExpand: () => void;
   onClose: () => void;
   onStarted: (v: Video) => void;
+  onUseEmbedded: () => void;
 }) {
   const host = useRef<HTMLDivElement>(null),
     player = useRef<any>(null),
@@ -59,19 +61,21 @@ export default function Player({
     [media, setMedia] = useState(""),
     [resolving, setResolving] = useState(false),
     [segments, setSegments] = useState<Segment[]>([]),
-    [sponsorStatus, setSponsorStatus] = useState("");
+    [sponsorStatus, setSponsorStatus] = useState(""),
+    [blocked, setBlocked] = useState(false);
   current.current = video;
   useEffect(() => {
     let disposed = false;
     ready.current = false;
     setError("");
     setPlaying(false);
+    setBlocked(false);
     if (video.provider === "backend") return;
     const node = document.createElement("div");
     const loadTimeout = setTimeout(() => {
       if (!disposed && !ready.current)
         setError(
-          "The player is taking too long to connect. Retry or open YouTube.",
+          "The player is taking too long to connect. Check your connection and retry.",
         );
     }, 18000);
     host.current?.replaceChildren(node);
@@ -82,13 +86,18 @@ export default function Player({
           width: "100%",
           height: "100%",
           videoId: current.current.id,
-          playerVars: { playsinline: 1, origin: location.origin, rel: 0 },
+          playerVars: {
+            autoplay: 1,
+            playsinline: 1,
+            origin: location.origin,
+            rel: 0,
+          },
           events: {
             onReady: () => {
               if (disposed) return;
               ready.current = true;
               const id = current.current.id;
-              player.current.cueVideoById({
+              player.current.loadVideoById({
                 videoId: id,
                 startSeconds:
                   read<Record<string, number>>("positions", {})[id] || 0,
@@ -97,18 +106,21 @@ export default function Player({
             onStateChange: (e: any) => {
               if (disposed) return;
               setPlaying(e.data === 1);
-              if (e.data === 1) onStarted(current.current);
+              if (e.data === 1) {
+                setError("");
+                setBlocked(false);
+                onStarted(current.current);
+              }
             },
             onError: (e: any) =>
               setError(
                 e.data === 101 || e.data === 150
-                  ? "The creator has disabled embedding. Open this video on YouTube."
+                  ? "The creator does not allow this video in embedded players. Choose another video below."
                   : e.data === 153
-                    ? "YouTube could not verify this host. Use the HTTPS app or open YouTube."
+                    ? "YouTube could not verify this host. Reload the installed HTTPS app and retry."
                     : "This video is unavailable or could not be played.",
               ),
-            onAutoplayBlocked: () =>
-              setError("Tap Play in the video to start playback."),
+            onAutoplayBlocked: () => setBlocked(true),
           },
         });
       })
@@ -138,8 +150,9 @@ export default function Player({
   }, [video.provider, retry]);
   useEffect(() => {
     setError("");
+    setBlocked(false);
     if (ready.current)
-      player.current?.cueVideoById({
+      player.current?.loadVideoById({
         videoId: video.id,
         startSeconds:
           read<Record<string, number>>("positions", {})[video.id] || 0,
@@ -249,9 +262,11 @@ export default function Player({
               if (direct.current)
                 direct.current.currentTime =
                   read<Record<string, number>>("positions", {})[video.id] || 0;
+              void direct.current?.play().catch(() => setBlocked(true));
             }}
             onPlay={() => {
               setPlaying(true);
+              setBlocked(false);
               onStarted(video);
             }}
             onPause={() => setPlaying(false)}
@@ -286,6 +301,20 @@ export default function Player({
         )}
       </div>
       {resolving && <p role="status">Connecting to the media server…</p>}
+      {blocked && (
+        <div className="player-error">
+          <p>Your browser requires a tap to start this video.</p>
+          <button
+            onClick={() => {
+              if (video.provider === "backend")
+                void direct.current?.play().catch(() => setBlocked(true));
+              else player.current?.playVideo?.();
+            }}
+          >
+            Play video
+          </button>
+        </div>
+      )}
       {sponsorStatus && <p role="status">{sponsorStatus}</p>}
       {video.provider === "backend" && media && (
         <label className="v-speed">
@@ -309,6 +338,9 @@ export default function Player({
         <div className="player-error" role="alert">
           {error}
           <button onClick={() => setRetry((r) => r + 1)}>Retry</button>
+          {video.provider === "backend" && (
+            <button onClick={onUseEmbedded}>Use standard player</button>
+          )}
         </div>
       )}
       {!expanded && (

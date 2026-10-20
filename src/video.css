@@ -391,6 +391,9 @@
   max-width: 850px;
   margin: 0 auto;
 }
+.player.expanded .player-screen {
+  min-height: 200px;
+}
 .player.mini {
   position: fixed;
   right: 12px;
@@ -516,6 +519,80 @@
 .v-playback-settings label {
   font-size: 14px;
   line-height: 1.7;
+}
+.v-suggestions ul {
+  list-style: none;
+  padding: 8px 0;
+  margin: 0;
+  background: #202020;
+  border-radius: 12px;
+}
+.v-suggestions li button {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: start;
+  padding: 10px 16px;
+  font-size: 15px;
+}
+.v-suggestions li button:hover,
+.v-suggestions li button:focus-visible {
+  background: #363636;
+}
+.v-suggestions p {
+  padding: 8px 0;
+}
+.v-request-error {
+  padding: 16px;
+  margin: 16px 0;
+  background: #282125;
+  border: 1px solid #59323c;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.v-request-error button,
+.v-load-more {
+  padding: 10px 20px;
+  margin-top: 12px;
+  background: #303030;
+  border-radius: 24px;
+}
+.v-load-more {
+  display: block !important;
+  margin: 24px auto;
+}
+.v-watch .v-related {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.v-related .v-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.video-app .v-related .v-thumbnail {
+  width: 42%;
+  max-width: 240px;
+  flex-shrink: 0;
+  border-radius: 10px;
+}
+.v-related .v-card-copy {
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+  gap: 0;
+}
+.v-related .v-avatar,
+.v-related .v-card-copy small {
+  display: none;
+}
+.v-related .v-save {
+  margin-inline-end: 0;
+}
+.v-related .v-title {
+  font-size: 13px;
+  -webkit-line-clamp: 3;
 }
 .v-speed {
   display: flex;

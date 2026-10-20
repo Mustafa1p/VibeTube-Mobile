@@ -1,5 +1,14 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
+const catalog = JSON.parse(readFileSync("src/catalog.json", "utf8"));
+test.beforeEach(async ({ page }) => {
+  await page.route("https://vibetubemobile.ipxer.online/api.php?**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ items: catalog, suggestions: [] }),
+    }),
+  );
+});
 async function installed(page: any) {
   await page.addInitScript(() =>
     Object.defineProperty(navigator, "standalone", {
@@ -61,7 +70,7 @@ test("installed feed opens in-app player, saves locally and preserves player thr
 test("search accepts a YouTube link without leaving app", async ({ page }) => {
   await installed(page);
   await page
-    .getByRole("button", { name: "Search collection", exact: true })
+    .getByRole("button", { name: "Search videos", exact: true })
     .click();
   await page.getByRole("textbox").fill("https://youtu.be/M7lc1UVf-VE");
   await page.getByRole("button", { name: "Submit search" }).click();
@@ -174,9 +183,6 @@ test("real playback advances inside app without a redirect", async ({
     timeout: 20000,
   });
   const frame = page.frameLocator(".youtube-host iframe");
-  await frame
-    .getByRole("button", { name: /تشغيل الفيديو|Play video|^Play$/ })
-    .click({ timeout: 20000 });
   await expect
     .poll(
       () =>

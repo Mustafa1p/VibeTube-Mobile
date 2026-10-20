@@ -13,6 +13,7 @@ import {
 import { usePlatform } from "./platform";
 const Videos = lazy(() => import("./VideoApp"));
 const base = import.meta.env.BASE_URL;
+const release = "3.2.0";
 export default function App() {
   const platform = usePlatform();
   const [device, setDevice] = useState(
@@ -29,9 +30,16 @@ export default function App() {
     };
     navigator.serviceWorker.addEventListener("controllerchange", changed);
     let alive = true;
+    let registration: ServiceWorkerRegistration | undefined;
+    const refresh = () => {
+      if (!document.hidden) void registration?.update().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("online", refresh);
     navigator.serviceWorker
       .register(base + "sw.js", { scope: base })
       .then((reg) => {
+        registration = reg;
         if (reg.waiting && alive) setUpdate(reg.waiting);
         reg.addEventListener("updatefound", () => {
           const w = reg.installing;
@@ -52,6 +60,8 @@ export default function App() {
       );
     return () => {
       alive = false;
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("online", refresh);
       navigator.serviceWorker.removeEventListener("controllerchange", changed);
     };
   }, [platform.setNotice]);
@@ -306,6 +316,7 @@ export default function App() {
               <X />
             </button>
           </div>
+          <p>VibeTube Mobile {release}</p>
           <p>
             Videos play inside VibeTube through YouTube's official embedded
             player. The app does not forward you to the YouTube website.

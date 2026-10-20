@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-20T03:02:12.507Z",
+  "url": "http://127.0.0.1:4175/VibeTube-Mobile/",
+  "status": 200,
+  "homeVideos": 20,
+  "musicVideos": 20,
+  "autocompleteSuggestions": 8,
+  "firstSearchPage": 20,
+  "afterLoadMore": 39,
+  "autoplaySecondsWithoutSecondTap": 1.852237,
+  "relatedVideos": 20,
+  "relatedThumbnailWidth": 163.796875,
+  "uncaughtErrors": [],
+  "physicalIPhone": "UNVERIFIED"
+}

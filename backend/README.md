@@ -16,7 +16,8 @@ The frontend pins its gateway URL and CSP to `https://vibetubemobile.ipxer.onlin
 | Request | Behavior |
 | --- | --- |
 | `?action=health` | Runtime availability; not a playback readiness assertion |
-| `?action=search&q=...` | Up to eight real public-video results; five-minute cache |
+| `?action=search&q=...&page=1` | Up to 20 public-video results per page, pages 1–5; five-minute cache |
+| `?action=suggest&q=...&lang=en` | Up to eight query suggestions from Google's YouTube autocomplete service |
 | `?action=video&id=...` | Resolve a strict 11-character ID to one compatible muxed MP4 ticket |
 | `?action=media&token=...` | Stream that private ticket, with single-byte-range support |
 

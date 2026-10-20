@@ -12,20 +12,37 @@ export async function backendRequest(
   const url = new URL(gateway);
   url.searchParams.set("action", action);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const response = await fetch(url, {
-    credentials: "omit",
-    signal: signal
-      ? AbortSignal.any([signal, AbortSignal.timeout(45000)])
-      : AbortSignal.timeout(45000),
-  });
-  const data = await response.json();
-  if (!response.ok)
-    throw Error(
-      typeof data.error === "string"
-        ? data.error
-        : "The media server could not respond.",
-    );
-  return data;
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  signal?.addEventListener("abort", cancel, { once: true });
+  const timer = setTimeout(cancel, 45000);
+  try {
+    const response = await fetch(url, {
+      credentials: "omit",
+      signal: controller.signal,
+    });
+    const data = await response.json();
+    if (!response.ok)
+      throw Error(
+        typeof data.error === "string"
+          ? data.error
+          : "The media server could not respond.",
+      );
+    return data;
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    if (controller.signal.aborted)
+      throw Error("The server took too long to respond. Retry your search.");
+    if (e instanceof TypeError)
+      throw Error(
+        "Could not connect to search. Check your connection and retry.",
+      );
+    throw e;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", cancel);
+  }
 }
 export async function resolveMedia(id: string, signal: AbortSignal) {
   if (!/^[\w-]{11}$/.test(id)) throw Error("Invalid video ID.");
@@ -44,14 +61,41 @@ export async function searchBackend(
   q: string,
   signal: AbortSignal,
 ): Promise<Video[]> {
-  const data = await backendRequest("search", { q }, signal);
+  return (await searchPage(q, 1, signal)).items;
+}
+export async function searchPage(
+  q: string,
+  page: number,
+  signal: AbortSignal,
+): Promise<{ items: Video[]; hasMore: boolean }> {
+  const data = await backendRequest(
+    "search",
+    { q, page: String(page) },
+    signal,
+  );
   if (!Array.isArray(data.items)) throw Error("Invalid search response.");
-  return data.items
+  const items = data.items
     .filter(
       (v: Video) =>
         /^[\w-]{11}$/.test(v.id) &&
         typeof v.title === "string" &&
         typeof v.channel === "string",
     )
+    .slice(0, 20);
+  return { items, hasMore: data.hasMore === true };
+}
+export async function suggestBackend(
+  q: string,
+  signal: AbortSignal,
+): Promise<string[]> {
+  const data = await backendRequest(
+    "suggest",
+    { q, lang: navigator.language || "en" },
+    signal,
+  );
+  if (!Array.isArray(data.suggestions))
+    throw Error("Suggestions are unavailable.");
+  return data.suggestions
+    .filter((s: unknown) => typeof s === "string")
     .slice(0, 8);
 }
