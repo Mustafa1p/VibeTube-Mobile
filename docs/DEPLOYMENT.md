@@ -2,7 +2,9 @@
 
 **Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.6.0
 
-Release 3.6.0 adds opt-in SponsorBlock community timestamp skipping through the standard iframe API, with a persistent enable switch, status and Undo. This does not block YouTube-served ads or inject webOS code into the player. [Research, behavior and verification](WEBOS-INTEGRATION.md) · [Real-video observations](sponsor-verification.json).
+Application commit: `a5748d920998aaea2776cccae55879d84f926464`. [Successful build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39369796743). Formatting, PHP syntax, build and twenty deterministic Chromium tests passed in CI. Two targeted SponsorBlock tests passed locally in WebKit.
+
+Release 3.6.0 adds opt-in SponsorBlock community timestamp skipping through the standard iframe API, with a persistent enable switch, status and Undo. This does not block YouTube-served ads or inject webOS code into the player. A check on the published app verified an automatic skip across the reported 138.43–154.388 second sponsor interval and Undo returning to its start, with no uncaught app errors. Physical iPhone behavior remains unverified. [Research, behavior and verification](WEBOS-INTEGRATION.md) · [Real-video observations](sponsor-verification.json).
 
 ## Earlier release 3.5.1 deployment
 

@@ -31,6 +31,6 @@ The implementation was written independently against the public API and existing
 
 Twenty deterministic Chromium tests passed locally, including opt-in/persistence, hash-prefix requests, response validation, duration mismatch, paused/unstarted states, wrong-video rejection, overlap handling, automatic seek, Undo, disabled state, 404 and service outage behavior. The two targeted SponsorBlock tests also passed in WebKit. These fixtures verify UI and commands, rather than proving provider playback.
 
-A separate browser check used real SponsorBlock timestamps for `aV81SqB6HQg`. The player skipped from the reported 138.43–154.388 second interval to its end; Undo returned to 138.43 seconds. The check seeks into the reported interval to exercise the integration without waiting through the whole video. [Observed results](sponsor-verification.json). Physical iPhone installation and playback remain unverified.
+A separate browser check on the published app used real SponsorBlock timestamps for `aV81SqB6HQg`. The player skipped from the reported 138.43–154.388 second interval to its end; Undo returned to 138.43 seconds. The check seeks into the reported interval to exercise the integration without waiting through the whole video. [Observed results](sponsor-verification.json). Physical iPhone installation and playback remain unverified.
 
 ![SponsorBlock status and Undo outside the player](screenshots/sponsor-skipped.png)
