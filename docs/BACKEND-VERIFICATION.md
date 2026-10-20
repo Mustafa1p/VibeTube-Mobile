@@ -8,6 +8,7 @@
 | Runtime | PHP with cURL and process execution; yt-dlp 2026.08.19 and Node 22.23.3 |
 | Release integrity | yt-dlp and Node binaries matched official release SHA-256 lists |
 | Live search | 200, eight real results for `Blender open movie` |
+| Published Pages app | Eight live search cards; experimental player off by default; no uncaught errors |
 | CORS | Pages origin accepted; unrelated origin rejected with 403 |
 | Invalid ID / token | 400; a valid but nonexistent ticket returns 410 |
 | Host video extraction | 502; YouTube bot/sign-in rejection for `aqz-KE-bpKQ`, two extraction clients |
@@ -19,6 +20,8 @@
 | YouTube account sign-in | Not implemented |
 
 `python backend/verify.py` performs live endpoint validation and prints sanitized status only. `VIBETUBE_REAL_BACKEND=1 npx playwright test --grep 'real hosting search'` checks real search through a browser. Deterministic tests use intercepted responses for failure recovery; those are not evidence of server media playback.
+
+The deployed Pages app was also checked in a fresh Chromium session. [Published observations](backend-live-verification.json) record real search and the failed server readiness probe. The default embedded player separately advanced from 1.45 to 2.56 seconds across navigation, preserving the same iframe and VibeTube origin; see [playback observations](live-verification.json).
 
 ## Extension adaptation
 

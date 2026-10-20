@@ -1,10 +1,10 @@
-# Published in-app playback fix
+# Published VibeTube 3.1
 
-**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3
+**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.1
 
-Application commit: `b80041e9fc44c30a3f51ebcc166a3b96863042db`.
+Application commit: `a43ce20e144a09ab83a970b7a996740461b50c3c`.
 
-[Successful GitHub Pages build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39358084915).
+[Successful GitHub Pages build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39360332276). Formatting, PHP syntax, build and eight deterministic tests passed in CI.
 
 ## Actual published-site verification — 20 October 2026
 
@@ -13,13 +13,15 @@ A fresh desktop Chromium session with standalone mode explicitly emulated loaded
 - HTTP 200.
 - The installed view displays the collection and embedded player.
 - No Open YouTube launcher button and no Sign in on YouTube button.
-- Actual video playback advanced to 1.35 seconds inside the iframe, then to 2.46 seconds after navigation to the local library.
+- Actual video playback advanced to 1.45 seconds inside the iframe, then to 2.56 seconds after navigation to the local library.
 - The exact iframe element remained connected during navigation; the top-level origin stayed `https://mustafa1p.github.io`.
 - Saving a video produced one entry in the local saved collection.
 - The application shell reloaded offline.
 - No uncaught application errors were observed.
 
 [Published playback screenshot](screenshots/published-in-app-playing.png).
+
+The published live-search view returned eight public videos through the actual hosting gateway and browser CORS. Experimental HTML5 playback was off by default. The visible Test media server control reported extraction failure, matching the host's YouTube bot/sign-in rejection. No uncaught errors were observed. [Published backend observations](backend-live-verification.json) · [Search screenshot](screenshots/published-live-search.png) · [Backend limitations](BACKEND-VERIFICATION.md).
 
 The embedded player retains YouTube's own native controls and branding. The app itself does not redirect video selections to the official site. Full Google/YouTube account sign-in is unavailable in this architecture and no account-handoff control is exposed.
 
