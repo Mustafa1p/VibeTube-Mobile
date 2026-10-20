@@ -1,6 +1,6 @@
 {
   "name": "vibetube-mobile",
-  "version": "3.4.1",
+  "version": "3.4.2",
   "private": true,
   "type": "module",
   "description": "An installable in-app YouTube player with a curated collection, persistent playback and local saved videos. No API key required.",

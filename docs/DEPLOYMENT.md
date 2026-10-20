@@ -1,6 +1,16 @@
-# Published VibeTube 3.4.1
+# Published VibeTube 3.4.2
 
-**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.4.1
+**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.4.2
+
+Release 3.4.2 replaces the navigation-area update notice with a centered native modal. **Update now** stops the player before activating the waiting service worker, then reloads automatically. **Later** or Escape defers the update until the next app launch. A busy state and retryable failure message cover activation.
+
+Seventeen Chromium checks passed locally, including a real waiting-service-worker update with a player open. A separate popup check covers 320px portrait, 390px portrait and short landscape, Escape, busy feedback and preserved storage. The same UI check passed in WebKit with a simulated waiting worker; physical iPhone update behavior remains unverified.
+
+![Centered update popup](screenshots/update-popup.png)
+
+The first transition from an older installation still uses that installation's existing update notice. Close its player and apply that update once to receive the new popup for future releases.
+
+## Earlier release 3.4.1 deployment
 
 Application commit: `151b23da97b9806b76f222853b7dc7affd796790`.
 
@@ -49,7 +59,7 @@ The embedded player retains YouTube's own native controls and branding. The app 
 
 ## Updating an existing installation
 
-Close the player, tap **Update now** when the notice appears, then reopen VibeTube from the Home Screen. About should display **VibeTube Mobile 3.4.1**. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3.4.1` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
+Tap **Update now** in the centered popup. The app stops playback and reloads automatically. About should display **VibeTube Mobile 3.4.2**. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3.4.2` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
 
 ## Remaining physical check
 

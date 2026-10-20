@@ -142,7 +142,9 @@ test("responsive player feed screenshots and no overflow", async ({ page }) => {
   await page.getByRole("button", { name: "Close player" }).click();
   await page.screenshot({ path: "docs/screenshots/in-app-library.png" });
 });
-test("waiting update is gated while player is open", async ({ page }) => {
+test("centered update popup defers or applies in one tap while player is open", async ({
+  page,
+}) => {
   await installed(page);
   await page.getByRole("button", { name: /^Watch Big Buck Bunny/ }).click();
   await page.evaluate(async () => {
@@ -158,13 +160,34 @@ test("waiting update is gated while player is open", async ({ page }) => {
       const r = await navigator.serviceWorker.getRegistration();
       await r?.update();
     });
-    await page.getByRole("button", { name: "Update now" }).click();
-    await expect(page.locator(".notice")).toContainText("Close the player");
-    await page.getByRole("button", { name: "Close player" }).click();
-    await page.getByRole("button", { name: "Update now" }).click();
+    const popup = page.getByRole("dialog", {
+      name: "A playback update is ready",
+    });
+    await expect(popup).toBeVisible();
+    const box = await popup.boundingBox();
+    expect(Math.abs(box!.x + box!.width / 2 - 195)).toBeLessThan(2);
+    expect(Math.abs(box!.y + box!.height / 2 - 422)).toBeLessThan(2);
+    await expect(page.locator(".update-note")).toHaveCount(0);
+    await page.screenshot({ path: "docs/screenshots/update-popup.png" });
+    await expect(
+      page.getByRole("button", { name: "Update now" }),
+    ).toBeFocused();
+    await popup.getByRole("button", { name: "Later", exact: true }).click();
+    await expect(popup).toHaveCount(0);
+    await expect(page.locator(".player")).toBeVisible();
+    await page.reload();
+    await expect(popup).toBeVisible();
+    await popup.getByRole("button", { name: "Update now" }).click();
+    await expect(
+      page.locator(".notice").filter({ hasText: "Close the player" }),
+    ).toHaveCount(0);
     await expect
       .poll(() => page.evaluate(async () => await caches.keys()))
       .toContain("vibetube-mobile-shell-test-release");
+    await expect(popup).toHaveCount(0);
+    await expect(
+      page.getByRole("navigation", { name: "Main navigation" }),
+    ).toBeVisible();
   } finally {
     writeFileSync("dist/sw.js", s);
   }

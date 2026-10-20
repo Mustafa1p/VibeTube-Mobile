@@ -5,16 +5,16 @@ import {
   PlusSquare,
   Smartphone,
   ArrowUpRight,
-  RefreshCw,
   Download,
   X,
   WifiOff,
 } from "lucide-react";
+import UpdatePrompt from "./UpdatePrompt";
 import { usePlatform } from "./platform";
 import { useAppViewport } from "./useAppViewport";
 const Videos = lazy(() => import("./VideoApp"));
 const base = import.meta.env.BASE_URL;
-const release = "3.4.1";
+const release = "3.4.2";
 export default function App() {
   const platform = usePlatform();
   useAppViewport(platform.installed);
@@ -22,7 +22,10 @@ export default function App() {
       location.hash === "#install-android" ? "android" : "iphone",
     ),
     [update, setUpdate] = useState<ServiceWorker | null>(null),
-    [about, setAbout] = useState(false);
+    [about, setAbout] = useState(false),
+    [updateDismissed, setUpdateDismissed] = useState(false),
+    [applying, setApplying] = useState(false),
+    [updateError, setUpdateError] = useState("");
   const approved = useRef(false),
     dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -71,9 +74,7 @@ export default function App() {
     if (!about) return;
     const before = document.activeElement as HTMLElement;
     dialog.current?.showModal();
-    document.body.classList.add("modal-open");
     return () => {
-      document.body.classList.remove("modal-open");
       before?.focus();
     };
   }, [about]);
@@ -85,21 +86,41 @@ export default function App() {
     window.addEventListener("hashchange", hash);
     return () => window.removeEventListener("hashchange", hash);
   }, []);
-  const apply = () => {
-    if (document.querySelector(".player")) {
-      platform.setNotice("Close the player before applying the update.");
-      return;
-    }
+  const updateOpen = !!update && !updateDismissed;
+  useEffect(() => {
+    document.body.classList.toggle("modal-open", about || updateOpen);
+    return () => document.body.classList.remove("modal-open");
+  }, [about, updateOpen]);
+  useEffect(() => {
+    if (!applying || !update) return;
+    // The player has unmounted before activation, so audio stops before reload.
+    const failed = () => {
+      approved.current = false;
+      setApplying(false);
+      setUpdateError("The update could not finish. Please try again.");
+    };
+    const timer = window.setTimeout(failed, 15000);
     approved.current = true;
-    update?.postMessage("ACTIVATE");
-  };
+    try {
+      update.postMessage("ACTIVATE");
+    } catch {
+      failed();
+    }
+    return () => window.clearTimeout(timer);
+  }, [applying, update]);
   return (
     <>
-      {update && (
-        <div className="update-note" role="status">
-          <RefreshCw size={16} />A playback update is ready.
-          <button onClick={apply}>Update now</button>
-        </div>
+      {updateOpen && (
+        <UpdatePrompt
+          applying={applying}
+          error={updateError}
+          onApply={() => {
+            setUpdateError("");
+            setAbout(false);
+            setApplying(true);
+          }}
+          onLater={() => setUpdateDismissed(true)}
+        />
       )}
       {platform.notice && (
         <div className="notice" role="status">
@@ -126,7 +147,13 @@ export default function App() {
             </div>
           }
         >
-          <Videos onAbout={() => setAbout(true)} />
+          {applying ? (
+            <div className="loading-screen" role="status">
+              Applying update…
+            </div>
+          ) : (
+            <Videos onAbout={() => setAbout(true)} />
+          )}
         </Suspense>
       ) : (
         <div className="app-shell">

@@ -46,7 +46,7 @@ An ordinary browser tab shows installation instructions only. Installation butto
 
 ### Updating an existing installation
 
-Close the player, tap **Update now** when it appears, then reopen the Home Screen app. About should display **VibeTube Mobile 3.4.1**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.4.1) to fetch the latest installation shell. Updates do not require a new API key or Google login.
+When the centered **A playback update is ready** popup appears, tap **Update now**. VibeTube stops the player, applies the update and reloads automatically. **Later** keeps the current session; the popup returns when you reopen the app. Saved music and videos remain on this device. About should display **VibeTube Mobile 3.4.2**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.4.2) to fetch the latest installation shell. Updates do not require a new API key or Google login.
 
 The installed app locks page zoom and uses 16px text-entry fields to avoid search-focus enlargement. Normal scrolling remains available. See [mobile viewport verification](docs/MOBILE-VIEWPORT.md).
 
