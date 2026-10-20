@@ -2,9 +2,13 @@
 
 **Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.4.2
 
+Application commit: `9239893f99ca0d2e744b5d955c67ae0d2428c327`. [Successful build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39367078196).
+
 Release 3.4.2 replaces the navigation-area update notice with a centered native modal. **Update now** stops the player before activating the waiting service worker, then reloads automatically. **Later** or Escape defers the update until the next app launch. A busy state and retryable failure message cover activation.
 
-Seventeen Chromium checks passed locally, including a real waiting-service-worker update with a player open. A separate popup check covers 320px portrait, 390px portrait and short landscape, Escape, busy feedback and preserved storage. The same UI check passed in WebKit with a simulated waiting worker; physical iPhone update behavior remains unverified.
+Seventeen Chromium checks passed locally and in CI, including a real waiting-service-worker update with a player open. A separate popup check covers 320px portrait, 390px portrait and short landscape, Escape, busy feedback and preserved storage. The same UI check passed in WebKit with a simulated waiting worker; physical iPhone update behavior remains unverified.
+
+The published app also displayed the centered popup and requested activation in a check with a simulated waiting worker. [Observed results](update-verification.json).
 
 ![Centered update popup](screenshots/update-popup.png)
 
