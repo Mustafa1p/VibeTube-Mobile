@@ -2,9 +2,11 @@
 
 **Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.5.1
 
+Application commit: `4bef9ff7340ab91a79a28110b73df16e757a0b31`. [Successful build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39367837844). Eighteen deterministic Chromium tests passed in CI; three targeted playback, channel navigation and image checks passed locally in WebKit.
+
 Release 3.5.1 requests standard-player playback with sound immediately after a video tap, explicitly unmuting and setting volume to 100%. If the browser blocks audible autoplay, it retries muted and offers one-tap **Unmute**. Channel names and photos open an in-app channel page with a Videos feed, pagination, retry and Back. The backend accepts a validated source video ID, resolves its official owner through YouTube metadata, and loads that owner's Videos tab. It does not substitute a text search for channel ownership.
 
-The gateway was deployed atomically after remote PHP lint. Live checks returned twenty NoCopyrightSounds uploads per page with the correct channel ID on pages one and two. A browser check verifies a real Blender video and opens forty Blender uploads while retaining the iframe. [Observed results](channel-playback-verification.json). Chromium and targeted WebKit fixtures cover channel name/photo navigation, retry, pagination, reload, Back, player retention and sound controls. Physical iPhone behavior remains unverified.
+The gateway was deployed atomically after remote PHP lint. Live checks returned twenty NoCopyrightSounds uploads per page with the correct channel ID on pages one and two. A browser check on the published app verified a real Blender video playing with sound without an Unmute tap, then opened forty Blender uploads while retaining the iframe. No uncaught errors were observed. [Observed results](channel-playback-verification.json). Chromium and targeted WebKit fixtures cover channel name/photo navigation, retry, pagination, reload, Back, player retention and sound controls. Physical iPhone behavior remains unverified.
 
 ![Channel page inside VibeTube](screenshots/channel-page.png)
 
