@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-10-20T02:18:52.494Z",
+  "url": "https://mustafa1p.github.io/VibeTube-Mobile/",
+  "status": 200,
+  "playbackSeconds": 1.353227,
+  "afterNavigationSeconds": 2.46462,
+  "playerSurvivedNavigation": true,
+  "topLevelOrigin": "https://mustafa1p.github.io",
+  "noLauncher": true,
+  "noSignIn": true,
+  "savedVideos": 1,
+  "offlineShell": true,
+  "uncaughtApplicationErrors": [],
+  "physicalDevice": "UNVERIFIED",
+  "accountSignIn": "UNAVAILABLE: no account handoff or fake sign-in exposed"
+}
