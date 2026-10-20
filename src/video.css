@@ -238,7 +238,7 @@
   min-width: 0;
   flex: 1;
   font: inherit;
-  font-size: 14px;
+  font-size: 16px;
 }
 .v-search form button,
 .v-library form button {
@@ -499,9 +499,6 @@
   .v-library,
   .v-page-title {
     padding-inline: 16px;
-  }
-  .v-search input {
-    font-size: 12px;
   }
   .v-library > p {
     line-height: 1.7;

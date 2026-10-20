@@ -11,11 +11,13 @@ import {
   WifiOff,
 } from "lucide-react";
 import { usePlatform } from "./platform";
+import { useAppViewport } from "./useAppViewport";
 const Videos = lazy(() => import("./VideoApp"));
 const base = import.meta.env.BASE_URL;
-const release = "3.3.0";
+const release = "3.3.1";
 export default function App() {
   const platform = usePlatform();
+  useAppViewport(platform.installed);
   const [device, setDevice] = useState(
       location.hash === "#install-android" ? "android" : "iphone",
     ),
