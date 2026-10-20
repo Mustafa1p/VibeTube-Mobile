@@ -6,6 +6,7 @@ import {
   MoreHorizontal,
   SkipBack,
   SkipForward,
+  Loader2,
 } from "lucide-react";
 import { thumb, type Video } from "./data";
 
@@ -18,6 +19,7 @@ interface Props {
   tracks: MusicTrack[];
   activeId?: string;
   playing: boolean;
+  loading: boolean;
   onPlay: (track: MusicTrack) => void;
   onRemove: (id: string) => void;
   onEdit: (id: string, title: string, artist: string) => boolean;
@@ -28,6 +30,7 @@ export default function MusicLibrary({
   tracks,
   activeId,
   playing,
+  loading,
   onPlay,
   onRemove,
   onEdit,
@@ -59,14 +62,21 @@ export default function MusicLibrary({
           <div className="music-toolbar">
             <button
               className="music-play-all"
+              disabled={loading && index === 0}
               onClick={() => onPlay(tracks[0])}
             >
-              {index === 0 && playing ? (
+              {index === 0 && loading ? (
+                <Loader2 className="music-spinner" size={20} />
+              ) : index === 0 && playing ? (
                 <Pause size={20} fill="currentColor" />
               ) : (
                 <Play size={20} fill="currentColor" />
               )}
-              {index === 0 && playing ? "Pause" : "Play all"}
+              {index === 0 && loading
+                ? "Starting…"
+                : index === 0 && playing
+                  ? "Pause"
+                  : "Play all"}
             </button>
             <button className="music-discover" onClick={onBrowse}>
               Find music
@@ -79,7 +89,13 @@ export default function MusicLibrary({
           {index >= 0 && (
             <div className="music-now">
               <div>
-                <span>{playing ? "NOW PLAYING" : "SELECTED TRACK"}</span>
+                <span>
+                  {loading
+                    ? "STARTING TRACK…"
+                    : playing
+                      ? "NOW PLAYING"
+                      : "SELECTED TRACK"}
+                </span>
                 <p>{tracks[index].title}</p>
               </div>
               <button
@@ -125,10 +141,13 @@ export default function MusicLibrary({
                   </div>
                   <button
                     className="music-track-play"
-                    aria-label={`${selected && playing ? "Pause" : "Play"} ${track.title}`}
+                    aria-label={`${selected && loading ? "Starting" : selected && playing ? "Pause" : "Play"} ${track.title}`}
+                    disabled={selected && loading}
                     onClick={() => onPlay(track)}
                   >
-                    {selected && playing ? (
+                    {selected && loading ? (
+                      <Loader2 className="music-spinner" size={21} />
+                    ) : selected && playing ? (
                       <Pause size={21} fill="currentColor" />
                     ) : (
                       <Play size={21} fill="currentColor" />

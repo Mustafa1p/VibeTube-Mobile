@@ -20,19 +20,19 @@ Install it on your Home Screen, accept the privacy notice, then search public Yo
 
 **Playback:** VibeTube uses only the standard YouTube player. Videos request playback immediately on selection; if the browser blocks sound, the player tries muted autoplay and offers Unmute. The extra tap-to-play message is removed. Live search and channel-photo metadata use the hosting gateway. Google account sign-in and YouTube ad blocking are not provided.
 
-| Capability                           | Current behavior                                                           |
-| ------------------------------------ | -------------------------------------------------------------------------- |
-| Playback                             | Visible YouTube player embedded inside VibeTube                            |
-| Navigation                           | One player remains mounted; minimize, expand and dismiss within the app    |
+| Capability                           | Current behavior                                                                |
+| ------------------------------------ | ------------------------------------------------------------------------------- |
+| Playback                             | Visible YouTube player embedded inside VibeTube                                 |
+| Navigation                           | One player remains mounted; minimize, expand and dismiss within the app         |
 | Search                               | Live public-video search through the hosted gateway; optional local-only search |
-| Channel photos                       | Real channel images, loaded lazily and cached, with initials as fallback |
-| Saved videos / Watch later           | Stored locally on this device                                              |
-| Music collection                    | Artwork, titles, editable artists, play/pause and a queue; saved locally |
-| History / resume                     | Recorded from real player events where the provider exposes position       |
-| Account sign-in                      | **Unavailable.** The app does not pretend to synchronize a YouTube account |
-| Whole YouTube feed / account website | Not embedded; no claim of personalized recommendations or full-site access |
-| API keys                             | None required                                                              |
-| Background playback                  | Not offered; the YouTube path pauses when the document is hidden           |
+| Channel photos                       | Real channel images, loaded lazily and cached, with initials as fallback        |
+| Saved videos / Watch later           | Stored locally on this device                                                   |
+| Music collection                     | Artwork, titles, editable artists, play/pause and a queue; saved locally        |
+| History / resume                     | Recorded from real player events where the provider exposes position            |
+| Account sign-in                      | **Unavailable.** The app does not pretend to synchronize a YouTube account      |
+| Whole YouTube feed / account website | Not embedded; no claim of personalized recommendations or full-site access      |
+| API keys                             | None required                                                                   |
+| Background playback                  | Not offered; the YouTube path pauses when the document is hidden                |
 
 YouTube's own visible controls and links remain intact inside the embed. Videos can be unavailable, region-restricted or blocked from embedding by their creators. VibeTube reports player errors and offers Retry; it does not silently redirect playback elsewhere.
 
@@ -46,7 +46,7 @@ An ordinary browser tab shows installation instructions only. Installation butto
 
 ### Updating an existing installation
 
-Close the player, tap **Update now** when it appears, then reopen the Home Screen app. About should display **VibeTube Mobile 3.4.0**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.4) to fetch the latest installation shell. Updates do not require a new API key or Google login.
+Close the player, tap **Update now** when it appears, then reopen the Home Screen app. About should display **VibeTube Mobile 3.4.1**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.4.1) to fetch the latest installation shell. Updates do not require a new API key or Google login.
 
 The installed app locks page zoom and uses 16px text-entry fields to avoid search-focus enlargement. Normal scrolling remains available. See [mobile viewport verification](docs/MOBILE-VIEWPORT.md).
 

@@ -775,6 +775,19 @@
 .music-track.selected .music-track-play {
   color: #76dfaa;
 }
+.music-spinner {
+  animation: music-spin 1s linear infinite;
+}
+@keyframes music-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .music-spinner {
+    animation: none;
+  }
+}
 .music-options {
   position: relative;
 }

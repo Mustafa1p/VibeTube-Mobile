@@ -14,7 +14,7 @@ import { usePlatform } from "./platform";
 import { useAppViewport } from "./useAppViewport";
 const Videos = lazy(() => import("./VideoApp"));
 const base = import.meta.env.BASE_URL;
-const release = "3.4.0";
+const release = "3.4.1";
 export default function App() {
   const platform = usePlatform();
   useAppViewport(platform.installed);

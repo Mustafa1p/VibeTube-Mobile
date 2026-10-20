@@ -21,6 +21,8 @@ test.beforeEach(async ({ page }) => {
           this.options = options;
           w.endMusic = () =>
             options.events.onStateChange({ data: 0, target: this });
+          w.finishMusicStartup = () =>
+            options.events.onStateChange({ data: 1, target: this });
           queueMicrotask(() => options.events.onReady());
         }
         loadVideoById(v: any) {
@@ -29,7 +31,10 @@ test.beforeEach(async ({ page }) => {
           this.playVideo();
         }
         playVideo() {
-          this.options.events.onStateChange({ data: 1, target: this });
+          this.options.events.onStateChange({
+            data: w.deferMusic ? -1 : 1,
+            target: this,
+          });
         }
         pauseVideo() {
           this.options.events.onStateChange({ data: 2, target: this });
@@ -171,4 +176,36 @@ test("watch page adds the active video to music", async ({ page }) => {
     .click();
   await openMusic(page);
   await expect(page.locator(".music-track")).toHaveCount(1);
+});
+
+test("a requested track stays in starting state until YouTube starts its content", async ({
+  page,
+}) => {
+  await page
+    .locator(".v-card")
+    .first()
+    .getByRole("button", { name: /^Add to music:/ })
+    .click();
+  await openMusic(page);
+  await page.evaluate(() => {
+    (window as any).deferMusic = true;
+  });
+  await page.getByRole("button", { name: "Play all", exact: true }).click();
+  await expect(page.locator(".music-now")).toContainText("STARTING TRACK");
+  await expect(
+    page
+      .locator(".music-track")
+      .first()
+      .getByRole("button", { name: /^Starting / }),
+  ).toBeDisabled();
+  await page.evaluate(() => {
+    (window as any).deferMusic = false;
+    (window as any).finishMusicStartup();
+  });
+  await expect(
+    page
+      .locator(".music-track")
+      .first()
+      .getByRole("button", { name: /^Pause / }),
+  ).toBeVisible();
 });

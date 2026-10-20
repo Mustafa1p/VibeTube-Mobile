@@ -43,6 +43,7 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
     [music, setMusic] = useState<MusicTrack[]>(() => read("music", [])),
     [musicSession, setMusicSession] = useState(false),
     [isPlaying, setIsPlaying] = useState(false),
+    [musicLoading, setMusicLoading] = useState(false),
     [playlists, setPlaylists] = useState<Record<string, Video[]>>(() =>
       read("playlists", { "Watch later": [] }),
     ),
@@ -109,6 +110,7 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
   const watch = !!active && route === "watch/" + active.id;
   const play = (v: Video, asMusic = false, navigate = true) => {
     setIsPlaying(false);
+    setMusicLoading(true);
     setMusicSession(asMusic);
     playerControl.current?.select(v);
     setActive(v);
@@ -337,6 +339,7 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
               }}
               onStarted={started}
               onPlaybackChange={setIsPlaying}
+              onLoadingChange={setMusicLoading}
               onEnded={() => {
                 const screen = document
                   .querySelector(".player-screen")
@@ -429,6 +432,7 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                 tracks={music}
                 activeId={active?.id}
                 playing={isPlaying}
+                loading={musicLoading}
                 onBrowse={browseMusic}
                 onPlay={(track) => {
                   if (active?.id === track.video.id && isPlaying) {

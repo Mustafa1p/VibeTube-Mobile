@@ -7,7 +7,15 @@ import {
 } from "react";
 import type { Video } from "./data";
 import { read, write } from "./storage";
-import { ChevronDown, Maximize2, X, Play, Pause, VolumeX } from "lucide-react";
+import {
+  ChevronDown,
+  Maximize2,
+  X,
+  Play,
+  Pause,
+  VolumeX,
+  Loader2,
+} from "lucide-react";
 
 declare global {
   interface Window {
@@ -56,6 +64,7 @@ interface Props {
   onClose: () => void;
   onStarted: (v: Video) => void;
   onPlaybackChange?: (playing: boolean) => void;
+  onLoadingChange?: (loading: boolean) => void;
   onEnded?: () => void;
   musicDock?: boolean;
 }
@@ -68,6 +77,7 @@ export default forwardRef<PlayerHandle, Props>(function Player(
     onClose,
     onStarted,
     onPlaybackChange,
+    onLoadingChange,
     onEnded,
     musicDock,
   },
@@ -83,10 +93,16 @@ export default forwardRef<PlayerHandle, Props>(function Player(
   const [error, setError] = useState(""),
     [playing, setPlaying] = useState(false),
     [muted, setMuted] = useState(false),
+    [pending, setPending] = useState(true),
     [retry, setRetry] = useState(0);
   current.current = video;
-  const callbacks = useRef({ onStarted, onPlaybackChange, onEnded });
-  callbacks.current = { onStarted, onPlaybackChange, onEnded };
+  const callbacks = useRef({
+    onStarted,
+    onPlaybackChange,
+    onLoadingChange,
+    onEnded,
+  });
+  callbacks.current = { onStarted, onPlaybackChange, onLoadingChange, onEnded };
   function load(v: Video, gesture = false) {
     current.current = v;
     if (!ready.current) return;
@@ -97,6 +113,14 @@ export default forwardRef<PlayerHandle, Props>(function Player(
       setMuted(false);
     }
     setError("");
+    const alreadyPlaying =
+      loaded.current === v.id && player.current.getPlayerState?.() === 1;
+    setPending(!alreadyPlaying);
+    callbacks.current.onLoadingChange?.(!alreadyPlaying);
+    if (alreadyPlaying) {
+      setPlaying(true);
+      callbacks.current.onPlaybackChange?.(true);
+    }
     if (loaded.current === v.id) {
       player.current.playVideo?.();
       return;
@@ -119,6 +143,8 @@ export default forwardRef<PlayerHandle, Props>(function Player(
     mutedAttempt.current = false;
     setError("");
     setPlaying(false);
+    setPending(true);
+    callbacks.current.onLoadingChange?.(true);
     setMuted(false);
     const node = document.createElement("div");
     host.current?.replaceChildren(node);
@@ -150,8 +176,16 @@ export default forwardRef<PlayerHandle, Props>(function Player(
             },
             onStateChange: (e: any) => {
               if (disposed) return;
-              setPlaying(e.data === 1);
-              callbacks.current.onPlaybackChange?.(e.data === 1);
+              if ([0, 1, 2, 3].includes(e.data)) {
+                setPlaying(e.data === 1 || e.data === 3);
+                callbacks.current.onPlaybackChange?.(
+                  e.data === 1 || e.data === 3,
+                );
+              }
+              if ([0, 1, 2].includes(e.data)) {
+                setPending(false);
+                callbacks.current.onLoadingChange?.(false);
+              }
               if (e.data === 1) {
                 setError("");
                 callbacks.current.onStarted(current.current);
@@ -168,7 +202,11 @@ export default forwardRef<PlayerHandle, Props>(function Player(
               }
             },
             onError: (e: any) => {
-              if (!disposed)
+              if (!disposed) {
+                setPending(false);
+                setPlaying(false);
+                callbacks.current.onLoadingChange?.(false);
+                callbacks.current.onPlaybackChange?.(false);
                 setError(
                   e.data === 101 || e.data === 150
                     ? "The creator does not allow this video in embedded players. Choose another video below."
@@ -176,6 +214,7 @@ export default forwardRef<PlayerHandle, Props>(function Player(
                       ? "YouTube could not verify this host. Reload the installed HTTPS app and retry."
                       : "This video is unavailable or could not be played.",
                 );
+              }
             },
             onAutoplayBlocked: () => {
               if (disposed || mutedAttempt.current) return;
@@ -188,7 +227,12 @@ export default forwardRef<PlayerHandle, Props>(function Player(
         });
       })
       .catch((e) => {
-        if (!disposed) setError(e.message);
+        if (!disposed) {
+          clearTimeout(timeout);
+          setPending(false);
+          callbacks.current.onLoadingChange?.(false);
+          setError(e.message);
+        }
       });
     const tick = setInterval(() => {
       if (!ready.current) return;
@@ -268,7 +312,14 @@ export default forwardRef<PlayerHandle, Props>(function Player(
             {musicDock ? "Open video" : "Continue watching"}
           </button>
           <button
-            aria-label={playing ? "Pause video" : "Play video"}
+            aria-label={
+              pending
+                ? "Starting video"
+                : playing
+                  ? "Pause video"
+                  : "Play video"
+            }
+            disabled={pending}
             onClick={() => {
               if (ready.current) {
                 if (playing) player.current.pauseVideo();
@@ -280,7 +331,13 @@ export default forwardRef<PlayerHandle, Props>(function Player(
               }
             }}
           >
-            {playing ? <Pause /> : <Play />}
+            {pending ? (
+              <Loader2 className="music-spinner" />
+            ) : playing ? (
+              <Pause />
+            ) : (
+              <Play />
+            )}
           </button>
         </div>
       )}
