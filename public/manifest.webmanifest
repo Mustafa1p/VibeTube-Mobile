@@ -2,7 +2,7 @@
   "id": "/VibeTube-Mobile/",
   "name": "VibeTube Mobile",
   "short_name": "VibeTube",
-  "description": "Your Home Screen shortcut to official YouTube. Install first, then launch YouTube for videos and normal account sign-in.",
+  "description": "In-app YouTube playback, a curated collection and a local library. Install on your Home Screen. No API key required.",
   "start_url": "/VibeTube-Mobile/",
   "scope": "/VibeTube-Mobile/",
   "display": "standalone",

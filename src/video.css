@@ -1,0 +1,502 @@
+.video-app {
+  background: #0f0f0f;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  color: #f3f3f3;
+}
+.video-app button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.v-header {
+  height: 58px;
+  padding: 0 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: #0f0f0f;
+  z-index: 25;
+  border-bottom: 1px solid #282828;
+}
+.v-header > div {
+  display: flex;
+}
+.v-header > div > button {
+  width: 44px;
+}
+.v-brand {
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -1px;
+}
+.v-main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 22px calc(100px + env(safe-area-inset-bottom));
+}
+.v-nav {
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  height: calc(64px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  display: flex;
+  justify-content: center;
+  gap: 90px;
+  background: #111;
+  border-top: 1px solid #303030;
+  z-index: 30;
+}
+.v-nav button {
+  flex-direction: column;
+  min-width: 70px;
+  color: #aaa;
+  font-size: 10px;
+  gap: 4px;
+}
+.v-nav button[aria-current="page"] {
+  color: #fff;
+}
+.v-chips {
+  display: flex;
+  gap: 8px;
+  padding: 16px 0;
+  overflow: auto;
+}
+.v-chips > button {
+  background: #292929;
+  border-radius: 8px;
+  padding: 7px 15px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.v-chips > button[aria-pressed="true"] {
+  color: #111;
+  background: #fff;
+}
+.v-feed-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 18px 0 24px;
+  gap: 14px;
+}
+.v-feed-title h1 {
+  font-size: 28px;
+  letter-spacing: -1px;
+}
+.v-feed-title small {
+  font-size: 10px;
+  color: #aaa;
+}
+.v-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px 20px;
+}
+.v-card {
+  min-width: 0;
+}
+.video-app .v-thumbnail {
+  width: 100%;
+  display: block;
+  aspect-ratio: 16/9;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #252525;
+}
+.v-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.v-card-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+}
+.v-avatar {
+  height: 34px;
+  width: 34px;
+  min-width: 34px;
+  background: #b4c9bf;
+  color: #293c32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+}
+.v-card-copy > div {
+  flex: 1;
+  min-width: 0;
+}
+.video-app .v-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: start;
+  font-weight: 600;
+}
+.v-card-copy p,
+.v-card-copy small {
+  color: #aaa;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.v-card-copy p {
+  margin-top: 5px;
+}
+.v-save {
+  width: 44px;
+  flex-shrink: 0;
+  margin-top: -8px;
+  margin-inline-end: -10px;
+}
+.v-watch {
+  max-width: 850px;
+  margin: auto;
+  padding-top: 22px;
+}
+.v-watch h1 {
+  font-size: 23px;
+  line-height: 1.35;
+  letter-spacing: -0.6px;
+}
+.v-watch h2 {
+  font-size: 19px;
+  margin: 30px 0 18px;
+}
+.v-meta {
+  color: #aaa;
+  font-size: 12px;
+  margin-top: 10px;
+}
+.v-watch-actions {
+  display: flex;
+  gap: 8px;
+  overflow: auto;
+  padding-top: 18px;
+}
+.v-watch-actions button {
+  padding: 10px 17px;
+  border-radius: 24px;
+  background: #292929;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.v-watch .v-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.v-search {
+  padding: 20px 0;
+}
+.v-search form,
+.v-library form {
+  display: flex;
+  gap: 8px;
+}
+.v-search input,
+.v-library input {
+  border: 1px solid #444;
+  border-radius: 24px;
+  background: #222;
+  padding: 12px 16px;
+  color: #fff;
+  min-width: 0;
+  flex: 1;
+  font: inherit;
+  font-size: 14px;
+}
+.v-search form button,
+.v-library form button {
+  width: 44px;
+  flex-shrink: 0;
+}
+.v-search p {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 14px;
+}
+.v-library {
+  max-width: 700px;
+  margin: auto;
+  padding-top: 28px;
+}
+.v-library h1 {
+  font-size: 28px;
+}
+.v-library > p {
+  font-size: 12px;
+  color: #aaa;
+  margin: 12px 0 25px;
+}
+.video-app .v-library > button {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
+  text-align: start;
+  gap: 18px;
+  background: #222;
+  padding: 16px;
+  border-radius: 12px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.v-library > button span {
+  margin-left: auto;
+  color: #aaa;
+  font-size: 12px;
+}
+.v-library h2 {
+  font-size: 19px;
+  margin: 30px 0 16px;
+}
+.v-library form {
+  margin-top: 24px;
+}
+.v-page-title {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 25px 0;
+}
+.v-page-title h1 {
+  font-size: 27px;
+}
+.v-consent {
+  max-width: 560px;
+  padding: 48px 22px;
+  margin: auto;
+}
+.v-consent h1 {
+  font-size: 34px;
+  margin-bottom: 22px;
+  letter-spacing: -1px;
+}
+.v-consent p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #bbb;
+  margin: 18px 0;
+}
+.v-consent a {
+  color: #ff909c;
+  text-decoration: underline;
+}
+.v-text {
+  font-size: 12px;
+  color: #aaa;
+  width: 100%;
+  padding: 12px;
+}
+.v-empty {
+  text-align: center;
+  padding: 65px 20px;
+}
+.v-empty h2 {
+  font-size: 22px;
+}
+.v-empty p {
+  font-size: 13px;
+  color: #aaa;
+  margin-top: 12px;
+  line-height: 1.7;
+}
+.v-loading {
+  font-size: 13px;
+  color: #aaa;
+  padding: 30px;
+}
+.v-toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  background: #eee;
+  color: #151515;
+  padding: 13px 17px;
+  border-radius: 12px;
+  z-index: 40;
+  max-width: 90%;
+  width: max-content;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 5px 35px #0008;
+}
+.v-toast p {
+  font-size: 12px;
+  line-height: 1.6;
+  max-width: 400px;
+}
+.v-toast button {
+  width: 36px;
+}
+.loading-screen {
+  text-align: center;
+  padding: 60px;
+  font-size: 14px;
+}
+.player {
+  background: #050505;
+  color: #fff;
+  z-index: 26;
+}
+.player-heading {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #171717;
+}
+.player-heading span {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+.player-heading button {
+  width: 44px;
+  flex-shrink: 0;
+}
+.player-screen {
+  aspect-ratio: 16/9;
+  min-height: 200px;
+  background: #000;
+}
+.youtube-host,
+.youtube-host iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.player.expanded {
+  max-width: 850px;
+  margin: 0 auto;
+}
+.player.mini {
+  position: fixed;
+  right: 12px;
+  bottom: calc(75px + env(safe-area-inset-bottom));
+  width: 356px;
+  max-width: calc(100vw - 24px);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #444;
+  box-shadow: 0 8px 40px #0009;
+}
+.player.mini .player-screen {
+  height: 200px;
+  aspect-ratio: auto;
+}
+.mini-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 11px;
+}
+.mini-caption > button:first-child {
+  flex: 1;
+  justify-content: flex-start;
+}
+.player-error {
+  background: #29171c;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.player-error button {
+  display: block;
+  text-decoration: underline;
+}
+.video-app:has(.player.mini) .v-main {
+  padding-bottom: calc(410px + env(safe-area-inset-bottom));
+}
+@media (max-width: 760px) {
+  .v-main {
+    padding-inline: 0;
+  }
+  .v-chips {
+    padding-inline: 14px;
+  }
+  .v-feed-title {
+    padding: 0 14px;
+    margin-top: 10px;
+  }
+  .v-feed-title h1 {
+    font-size: 22px;
+  }
+  .v-feed-title small {
+    font-size: 9px;
+  }
+  .v-grid,
+  .v-watch .v-grid {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+  .video-app .v-thumbnail {
+    border-radius: 0;
+  }
+  .v-card-copy {
+    padding: 12px 14px;
+  }
+  .v-nav {
+    gap: 0;
+    justify-content: space-around;
+  }
+  .v-nav button {
+    flex: 1;
+  }
+  .v-watch {
+    padding-inline: 14px;
+  }
+  .v-watch .v-grid {
+    margin-inline: -14px;
+  }
+  .v-watch h1 {
+    font-size: 21px;
+  }
+  .v-search,
+  .v-library,
+  .v-page-title {
+    padding-inline: 16px;
+  }
+  .v-search input {
+    font-size: 12px;
+  }
+  .v-library > p {
+    line-height: 1.7;
+  }
+  .player-heading {
+    height: 40px;
+  }
+  .v-consent h1 {
+    font-size: 30px;
+  }
+}
+@media (max-width: 360px) {
+  .v-feed-title h1 {
+    font-size: 19px;
+  }
+  .v-feed-title small {
+    font-size: 8px;
+  }
+}

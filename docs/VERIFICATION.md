@@ -1,55 +1,15 @@
-# Verification
+# In-app playback verification — 20 October 2026
 
-VibeTube Mobile 2.0 is an installation screen and Home Screen launcher for official YouTube. It supersedes the custom video-browser implementation. No video API key, account integration, intermediary player, password field or video cache remains.
+Release 3 replaces the external launcher with a persistent embedded YouTube player.
 
-## Local checks — 20 October 2026
+- Formatting and TypeScript/Vite build: PASS.
+- Core browser tests: 6 passed (6.4 seconds), covering installation gating, absent launcher/sign-in buttons, in-app watch navigation, saves, Watch later, deep-link refresh, URL input, privacy explanation, offline shell, manifest/icons, responsive overflow and update gating.
+- Separate live YouTube playback test: PASS (5.3 seconds). Real iframe video currentTime advanced beyond 1 second; the top-level URL stayed on VibeTube; navigation to the local library kept the same iframe element connected and media advanced beyond 2 seconds.
+- Desktop Chromium, production preview, standalone mode emulated. This is not a physical iPhone result.
+- Screenshots: `screenshots/in-app-home.png`, `in-app-playing.png`, `in-app-library.png`.
 
-Environment: Windows, Node.js 22.17.0, Vite production preview, Playwright desktop Chromium. This is not a physical iOS or Android installation test.
+The core CI suite skips the separately enabled provider test; run it locally with VIBETUBE_REAL_MEDIA=1. Successful media advancement is asserted, not inferred from a player preview image.
 
-- **TypeScript and production build:** PASS.
-- **Formatting:** PASS.
-- **Browser tests:** 8 passed in the final local run (5.1 seconds), and all eight also passed on the GitHub Actions runner.
-- **Application errors:** no uncaught errors in the installation-gating test.
-- **External requests before handoff:** none observed in the privacy/network test.
-- **Responsive inspection:** 320×568, 375×812, 390×844, 430×932, 844×390 and 1440×1000. No horizontal overflow. Captures visually inspected on phone and desktop layouts.
-- **Production JS:** approximately 240 kB / 75 kB gzip. CSS approximately 11 kB / 3 kB gzip. Bundle sizes are not phone performance measurements.
+Full YouTube account sign-in and synchronization are unavailable. No sign-in form or external account handoff is exposed. Search is scoped to the curated collection, with YouTube URL input for other videos. No Data API key is required.
 
-| Check                                               | Evidence / status                                                                                                                              |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Browser visit                                       | Installation guide appears; launch controls are absent                                                                                         |
-| iPhone and Android guide links                      | Hash selection, device switching and refresh tested                                                                                            |
-| Installed launcher                                  | Emulated standalone signal exposes launch controls                                                                                             |
-| Open YouTube                                        | Navigation to `https://m.youtube.com/` tested at a controlled destination boundary                                                             |
-| Account access                                      | Navigation to `https://www.youtube.com/signin?next=%2F` tested at that boundary; the live handoff also reached the genuine Google sign-in page |
-| Browser back                                        | Returning to VibeTube leaves account action usable                                                                                             |
-| Android prompt                                      | Dismissal handled; `appinstalled` alone does not unlock the browser page                                                                       |
-| Manifest and icons                                  | `/VibeTube-Mobile/` id/start_url/scope, standalone display and PNG responses tested                                                            |
-| Offline                                             | Installed shell reloads; launcher disabled offline and re-enabled on connection recovery                                                       |
-| Update                                              | Waiting worker notice, explicit activation and scoped cache change tested                                                                      |
-| Privacy dialog                                      | Focus trapping through native modal dialog; Escape closes and restores focus                                                                   |
-| Reduced motion                                      | Layout inspected with motion preference enabled                                                                                                |
-| Native iPhone / Android installation                | **UNVERIFIED** — no physical device available                                                                                                  |
-| Private Google account sign-in                      | **UNVERIFIED** — no user credentials used; performed directly on Google/YouTube                                                                |
-| YouTube playback on an installed phone              | **UNVERIFIED** — handled by official YouTube after leaving the launcher                                                                        |
-| PiP, locked/background playback, AirPlay, downloads | Not added by VibeTube; depend on YouTube/account/device                                                                                        |
-
-The test intercepts the final YouTube navigation to verify exact destination URLs without signing into a private account. It does not simulate a successful Google login or claim successful media playback. YouTube's own [mobile-browser documentation](https://support.google.com/youtube/answer/3008060) describes normal sign-in and browsing on its mobile website.
-
-## Published deployment
-
-Published successfully at [mustafa1p.github.io/VibeTube-Mobile](https://mustafa1p.github.io/VibeTube-Mobile/). The real HTTPS URL, assets, manifest, scope, offline shell, installation gate and official home/sign-in handoffs were checked after deployment. See [DEPLOYMENT.md](DEPLOYMENT.md) and [live-verification.json](live-verification.json) for the observed results. Physical phone installation and a completed private login remain unverified.
-
-## Physical-device acceptance
-
-Record device model, operating-system/browser version, installed vs browser mode, duration and actual outcome for each test:
-
-1. Open the published URL in Safari on iPhone. Confirm that only the installation guide appears and that there is no Open YouTube bypass.
-2. Share → Add to Home Screen → Open as Web App if shown → Add. Launch the icon; check safe areas, icon quality and launcher availability.
-3. Tap Open YouTube. Record whether Safari, another browser window or the YouTube app opens. The launcher is allowed to leave its standalone window.
-4. On official YouTube, tap profile → Sign in. Complete Google's normal flow yourself. Confirm real subscriptions/history if your account offers them. Never enter credentials into a VibeTube form; none exists.
-5. Play an available video for two minutes on YouTube. Exercise play/pause, seek and rotation. Record any provider restrictions separately from launcher behavior.
-6. Return to the VibeTube icon. Confirm the launch button still works; disconnect networking and verify the offline explanation, then restore it.
-7. Repeat installation in Chrome on Android, including native-prompt acceptance and dismissal. Browser-provided wording and installation eligibility can vary.
-8. Test PiP, screen lock/background playback or downloads only on official YouTube if offered. Record account/Premium requirements and actual device results; do not attribute them to VibeTube.
-
-Standalone detection is a UI signal, not cryptographic proof of installation. There is no secret browser bypass in the product, but browser developer tools can emulate display mode. This is not an access-control system.
+Physical acceptance still requires installing on an iPhone/Android device, launching the Home Screen icon, accepting the player notice, opening a video, tapping the provider Play control, navigating while playing, checking fullscreen, and recording device/OS/browser results. Background playback is not offered.

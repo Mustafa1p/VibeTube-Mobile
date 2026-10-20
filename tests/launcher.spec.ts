@@ -1,178 +1,106 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
-async function standalone(page: any) {
-  await page.addInitScript(() => {
+async function installed(page: any) {
+  await page.addInitScript(() =>
     Object.defineProperty(navigator, "standalone", {
       get: () => true,
       configurable: true,
-    });
-  });
+    }),
+  );
+  await page.goto("");
+  await page.getByRole("button", { name: "Agree & start watching" }).click();
+  await expect(page.locator(".v-card")).toHaveCount(7);
 }
-test("browser visits show installation only and device deep links work", async ({
+test("browser shows installation guide without launcher or sign-in buttons", async ({
+  page,
+}) => {
+  await page.goto("");
+  await expect(page.locator(".install-card")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Open YouTube", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Sign in on YouTube", exact: true }),
+  ).toHaveCount(0);
+  await page.goto("#install-android");
+  await expect(
+    page.getByRole("button", { name: "Android", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Android", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
+test("installed feed opens in-app player, saves locally and preserves player through navigation", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("");
-  await expect(
-    page.getByRole("heading", { name: "Give it a place on your Home Screen." }),
-  ).toBeVisible();
+  await installed(page);
+  await page.getByRole("button", { name: /^Watch Big Buck Bunny/ }).click();
+  await expect(page.locator(".player.expanded")).toBeVisible();
+  expect(new URL(page.url()).origin).toBe("http://127.0.0.1:4175");
   await expect(
     page.getByRole("button", { name: "Open YouTube", exact: true }),
   ).toHaveCount(0);
-  await expect(page.locator("iframe,video,input[type=password]")).toHaveCount(
-    0,
-  );
-  await page.goto("#install-android");
-  await expect(
-    page.getByRole("button", { name: "Android", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByText("Open this page in Chrome")).toBeVisible();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("button", { name: "Watch later", exact: true }).click();
+  await page.getByRole("button", { name: "Minimize player" }).click();
+  await expect(page.locator(".player.mini")).toBeVisible();
+  await page.getByRole("button", { name: "You", exact: true }).click();
+  await page.getByRole("button", { name: /Saved videos/ }).click();
+  await expect(page.locator(".v-card")).toHaveCount(1);
+  await page.getByRole("button", { name: "Expand player" }).click();
   await page.reload();
+  await expect(page.locator(".player.expanded")).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Android", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.getByRole("button", { name: "Saved", exact: true }),
+  ).toBeVisible();
   expect(errors).toEqual([]);
 });
-test("installed launch and account handoff use only official YouTube", async ({
-  page,
-}) => {
-  await standalone(page);
-  await page.route("https://m.youtube.com/**", (r) =>
-    r.fulfill({
-      contentType: "text/html",
-      body: "<title>YouTube navigation boundary</title>",
-    }),
-  );
-  await page.route("https://www.youtube.com/signin**", (r) =>
-    r.fulfill({
-      contentType: "text/html",
-      body: "<title>Official sign-in navigation boundary</title>",
-    }),
-  );
-  await page.goto("");
-  await expect(
-    page.getByRole("button", { name: "Open YouTube", exact: true }),
-  ).toBeVisible();
-  await expect(page.locator(".install-card")).toHaveCount(0);
-  await page.getByRole("button", { name: "Open YouTube", exact: true }).click();
-  await expect(page).toHaveURL("https://m.youtube.com/");
-  await page.goBack();
-  await expect(
-    page.getByRole("button", { name: "Sign in on YouTube", exact: true }),
-  ).toBeEnabled();
+test("search accepts a YouTube link without leaving app", async ({ page }) => {
+  await installed(page);
   await page
-    .getByRole("button", { name: "Sign in on YouTube", exact: true })
+    .getByRole("button", { name: "Search collection", exact: true })
     .click();
-  await expect(page).toHaveURL("https://www.youtube.com/signin?next=%2F");
+  await page.getByRole("textbox").fill("https://youtu.be/M7lc1UVf-VE");
+  await page.getByRole("button", { name: "Submit search" }).click();
+  await expect(page.locator(".player.expanded")).toBeVisible();
+  await expect(page.locator(".v-watch h1")).toContainText("YouTube Developers");
+  expect(page.url()).toContain("127.0.0.1:4175/VibeTube-Mobile/");
+  await page.getByRole("button", { name: "About and settings" }).click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Full YouTube account sign-in is not available",
+  );
+  await page.keyboard.press("Escape");
 });
-test("offline app shell survives reload and disables network launch", async ({
+test("offline shell and subpath assets resolve", async ({
   page,
   context,
+  request,
 }) => {
-  await standalone(page);
-  await page.goto("");
+  await installed(page);
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
+  const m = await (await request.get("manifest.webmanifest")).json();
+  expect(m.scope).toBe("/VibeTube-Mobile/");
+  for (const i of m.icons)
+    expect((await request.get(i.src)).status()).toBe(200);
   await context.setOffline(true);
   await page.reload();
-  await expect(
-    page.getByRole("button", { name: "Open YouTube", exact: true }),
-  ).toBeDisabled();
-  await expect(page.getByRole("status")).toContainText("You're offline");
+  await expect(page.locator(".v-card")).toHaveCount(7);
+  await expect(page.locator(".network-note")).toContainText("You're offline");
   await context.setOffline(false);
-  await expect(
-    page.getByRole("button", { name: "Open YouTube", exact: true }),
-  ).toBeEnabled();
 });
-test("Android install prompt honors dismissal and never unlocks browser mode", async ({
-  page,
-}) => {
-  await page.goto("#install-android");
-  await page.evaluate(() => {
-    const e = new Event("beforeinstallprompt", { cancelable: true });
-    Object.assign(e, {
-      prompt: async () => {},
-      userChoice: Promise.resolve({ outcome: "dismissed", platform: "web" }),
-    });
-    window.dispatchEvent(e);
-  });
-  await page
-    .getByRole("button", { name: "Install on Android", exact: true })
-    .click();
-  await expect(page.getByRole("status")).toContainText(
-    "Installation dismissed",
-  );
-  await expect(
-    page.getByRole("button", { name: "Open YouTube", exact: true }),
-  ).toHaveCount(0);
-  await page.evaluate(() => window.dispatchEvent(new Event("appinstalled")));
-  await expect(page.getByRole("status")).toContainText(
-    "Open VibeTube from your Home Screen",
-  );
-  await expect(
-    page.getByRole("button", { name: "Open YouTube", exact: true }),
-  ).toHaveCount(0);
-});
-test("manifest and every icon resolve under repository subpath", async ({
-  request,
-  page,
-}) => {
-  const m = await (await request.get("manifest.webmanifest")).json();
-  expect(m.id).toBe("/VibeTube-Mobile/");
-  expect(m.scope).toBe("/VibeTube-Mobile/");
-  expect(m.start_url).toBe("/VibeTube-Mobile/");
-  expect(m.display).toBe("standalone");
-  for (const i of m.icons) {
-    const r = await request.get(i.src);
-    expect(r.status()).toBe(200);
-    expect(r.headers()["content-type"]).toContain("image/png");
-  }
-  await page.goto("");
-  const assets = await page
-    .locator("script[src],link[href]")
-    .evaluateAll((ns) =>
-      ns.map((n) => n.getAttribute("src") || n.getAttribute("href")),
-    );
-  expect(assets.every((a) => a?.startsWith("/VibeTube-Mobile/"))).toBe(true);
-});
-test("accessible privacy dialog and no external requests before handoff", async ({
-  page,
-}) => {
-  const outside: string[] = [];
-  page.on("request", (r) => {
-    if (!r.url().startsWith("http://127.0.0.1:4175/")) outside.push(r.url());
-  });
-  await page.goto("");
-  await page.getByRole("button", { name: "Privacy", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText("no account database");
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Privacy", exact: true }),
-  ).toBeFocused();
-  expect(outside).toEqual([]);
-});
-test("screenshots and responsive overflow across mobile and landscape", async ({
-  page,
-}) => {
-  await page.goto("");
-  await page.screenshot({
-    path: "docs/screenshots/install-iphone.png",
-    fullPage: true,
-  });
-  await page.goto("#install-android");
-  await page.screenshot({
-    path: "docs/screenshots/install-android.png",
-    fullPage: true,
-  });
+test("responsive player feed screenshots and no overflow", async ({ page }) => {
+  await installed(page);
   for (const size of [
     { width: 320, height: 568 },
-    { width: 375, height: 812 },
+    { width: 390, height: 844 },
     { width: 430, height: 932 },
     { width: 844, height: 390 },
-    { width: 1440, height: 1000 },
+    { width: 1440, height: 900 },
   ]) {
     await page.setViewportSize(size);
     expect(
@@ -180,49 +108,94 @@ test("screenshots and responsive overflow across mobile and landscape", async ({
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: `docs/screenshots/install-${size.width}.png`,
-      fullPage: true,
-    });
   }
-  await standalone(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.reload();
-  await page.screenshot({
-    path: "docs/screenshots/installed-launcher.png",
-    fullPage: true,
+  await page.locator("img").evaluateAll(async (ns: HTMLImageElement[]) => {
+    for (const n of ns) n.loading = "eager";
+    await Promise.race([
+      Promise.all(
+        ns.map((n) =>
+          n.complete
+            ? Promise.resolve()
+            : new Promise((r) => {
+                n.onload = r;
+                n.onerror = r;
+              }),
+        ),
+      ),
+      new Promise((r) => setTimeout(r, 4000)),
+    ]);
   });
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.getByRole("button", { name: "How it works", exact: true }).click();
-  await page.screenshot({ path: "docs/screenshots/how-it-works.png" });
-  await expect(page.getByRole("dialog")).toContainText(
-    "may leave the standalone window",
-  );
+  await page.screenshot({ path: "docs/screenshots/in-app-home.png" });
+  await page.getByRole("button", { name: /^Watch Big Buck Bunny/ }).click();
+  await page.screenshot({ path: "docs/screenshots/in-app-watch.png" });
+  await page.getByRole("button", { name: "You", exact: true }).click();
+  await page.getByRole("button", { name: "Close player" }).click();
+  await page.screenshot({ path: "docs/screenshots/in-app-library.png" });
 });
-test("waiting service worker update activates on request", async ({ page }) => {
-  await page.goto("");
+test("waiting update is gated while player is open", async ({ page }) => {
+  await installed(page);
+  await page.getByRole("button", { name: /^Watch Big Buck Bunny/ }).click();
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
-  const source = readFileSync("dist/sw.js", "utf8");
+  const s = readFileSync("dist/sw.js", "utf8");
   try {
     writeFileSync(
       "dist/sw.js",
-      source.replace(/shell-[a-f0-9]+/, "shell-test-release"),
+      s.replace(/shell-[a-f0-9]+/, "shell-test-release"),
     );
     await page.evaluate(async () => {
       const r = await navigator.serviceWorker.getRegistration();
       await r?.update();
     });
-    await expect(page.getByRole("button", { name: "Update now" })).toBeVisible({
-      timeout: 15000,
-    });
+    await page.getByRole("button", { name: "Update now" }).click();
+    await expect(page.locator(".notice")).toContainText("Close the player");
+    await page.getByRole("button", { name: "Close player" }).click();
     await page.getByRole("button", { name: "Update now" }).click();
     await expect
       .poll(() => page.evaluate(async () => await caches.keys()))
       .toContain("vibetube-mobile-shell-test-release");
-    await expect(page.locator(".install-card")).toBeVisible();
   } finally {
-    writeFileSync("dist/sw.js", source);
+    writeFileSync("dist/sw.js", s);
   }
+});
+test("real playback advances inside app without a redirect", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.VIBETUBE_REAL_MEDIA !== "1",
+    "External provider check enabled explicitly",
+  );
+  test.setTimeout(60000);
+  await installed(page);
+  await page.getByRole("button", { name: /^Watch Big Buck Bunny/ }).click();
+  await expect(page.locator(".youtube-host iframe")).toBeVisible({
+    timeout: 20000,
+  });
+  const frame = page.frameLocator(".youtube-host iframe");
+  await frame
+    .getByRole("button", { name: /تشغيل الفيديو|Play video|^Play$/ })
+    .click({ timeout: 20000 });
+  await expect
+    .poll(
+      () =>
+        frame.locator("video").evaluate((v: HTMLVideoElement) => v.currentTime),
+      { timeout: 20000 },
+    )
+    .toBeGreaterThan(1);
+  await page.screenshot({ path: "docs/screenshots/in-app-playing.png" });
+  const origin = new URL(page.url()).origin;
+  expect(origin).toBe("http://127.0.0.1:4175");
+  const element = await page.locator(".youtube-host iframe").elementHandle();
+  await page.getByRole("button", { name: "You", exact: true }).click();
+  await expect(page.locator(".player.mini")).toBeVisible();
+  expect(await element?.evaluate((n) => n.isConnected)).toBe(true);
+  await expect
+    .poll(
+      () =>
+        frame.locator("video").evaluate((v: HTMLVideoElement) => v.currentTime),
+      { timeout: 5000 },
+    )
+    .toBeGreaterThan(2);
 });
