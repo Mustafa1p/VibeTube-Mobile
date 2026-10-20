@@ -23,6 +23,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run format:check
+      - run: php -l backend/api.php
       - run: npm run build
       - run: npm test
       - uses: actions/configure-pages@v5

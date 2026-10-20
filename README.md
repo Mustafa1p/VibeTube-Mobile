@@ -16,13 +16,17 @@
 
 VibeTube Mobile plays videos inside its own interface using YouTube's official embedded player. Selecting a video does **not** forward the app to youtube.com. The previous external launcher and sign-in buttons have been removed.
 
-Install it on your Home Screen, accept the player privacy notice, then browse the curated collection or paste a YouTube video link into Search. No developer API key is required.
+Install it on your Home Screen, accept the privacy notice, then search public YouTube videos, browse the collection or paste a video link. No developer API key is required.
+
+**Backend status:** live search is deployed and verified. Experimental playback through our own HTML5 player is **blocked by YouTube's bot/sign-in rejection of the hosting IP** and stays off by default. The default embedded player continues to play inside VibeTube. This release does not provide Google account sign-in or verified YouTube ad blocking.
 
 | Capability                           | Current behavior                                                           |
 | ------------------------------------ | -------------------------------------------------------------------------- |
 | Playback                             | Visible YouTube player embedded inside VibeTube                            |
 | Navigation                           | One player remains mounted; minimize, expand and dismiss within the app    |
-| Search                               | Searches the curated collection; accepts public video links and IDs        |
+| Search                               | Live public-video search through the hosted gateway; optional local-only search |
+| Experimental HTML5 player            | Implemented, off by default; hosting-IP rejection prevents verified playback |
+| Community sponsor skipping           | Adapted for the experimental player, opt-in; end-to-end skipping unverified |
 | Saved videos / Watch later           | Stored locally on this device                                              |
 | History / resume                     | Recorded from real player events where the provider exposes position       |
 | Account sign-in                      | **Unavailable.** The app does not pretend to synchronize a YouTube account |
@@ -54,11 +58,17 @@ These are desktop Chromium captures with standalone mode emulated. They do not e
 
 ## How it works
 
-React renders the collection, navigation and local library. `Player.tsx` creates one YouTube IFrame API player and preserves it while changing screens. Metadata comes from a checked-in real-video catalog or YouTube oEmbed when a video link is supplied. Search does not claim to search all of YouTube.
+React renders navigation and the local library. By default, `Player.tsx` keeps one YouTube IFrame API player mounted across screen changes. The home collection is checked in; link metadata uses that catalog or YouTube oEmbed. Search calls the PHP gateway at `vibetubemobile.ipxer.online`, which uses yt-dlp's public search without a YouTube Data API key. Results are real videos, without account personalization. Turn live search off under **You → Playback settings** to search only the local collection.
+
+The optional HTML5 path asks the server to resolve a public video, receives an opaque ticket and streams compatible MP4 bytes through a bounded media relay. This lets app-owned controls operate on the video element. It does not embed the full YouTube website or copy Google sessions. The gateway uses private runtime files, strict video-ID validation, fixed upstream hosts, byte ranges, timeouts and capacity limits. See [backend setup](backend/README.md) and [observed verification results](docs/BACKEND-VERIFICATION.md).
+
+The supplied hosting runs the gateway and real search, but rejected both tested video extraction clients. Local extraction and an upstream 206 response succeeded on the development machine; that is **not** evidence of playback from the deployed host. Experimental mode includes Test media server, readable errors and a switch back to the embedded player. A replacement hosting/network path needs actual streaming and physical-device tests before this mode can become the default.
+
+SponsorBlock timestamp validation and hash-prefix lookup were adapted from the upstream extension for the app-owned HTML5 player. The original browser extension is not installed in the PWA, and its request-blocking or page-injection features do not run here. Sponsor skipping is optional, off by default, and does not remove YouTube advertisements. [MIT license and source notices](public/THIRD-PARTY-LICENSES.txt) are included.
 
 The service worker caches a finite set of VibeTube shell assets under `/VibeTube-Mobile/`. It does not cache video streams, account data, or remote YouTube responses. New versions wait for Update now; the update action asks you to close the player before reloading.
 
-Google receives requests when the player, thumbnails or metadata are loaded, and may use cookies or serve ads. The initial player notice and About dialog explain this. VibeTube stores local collections and resume positions in browser storage; it has no Google credentials, account server, or analytics.
+Google receives requests when the player, thumbnails or metadata are loaded, and may use cookies or serve ads. Live search sends query terms and your IP address to our hosting provider; results are cached for five minutes. Optional SponsorBlock lookup sends your IP address and a four-character video hash prefix to that service. The player notice and settings describe these requests. VibeTube stores collections and resume positions locally; it has no Google credentials, account server, or analytics.
 
 ## Development
 
@@ -71,6 +81,7 @@ npm run format:check
 npm run build
 npx playwright install chromium
 npm test
+python backend/verify.py
 ```
 
 Open the printed `/VibeTube-Mobile/` URL. Regular browser mode intentionally shows the installation guide. Tests emulate standalone mode to exercise the video app. Preview the production build with `npm run preview`.
@@ -80,13 +91,15 @@ The external real-playback test is opt-in, so CI does not mistake provider/netwo
 ```powershell
 $env:VIBETUBE_REAL_MEDIA='1'
 npx playwright test --grep 'real playback'
+$env:VIBETUBE_REAL_BACKEND='1'
+npx playwright test --grep 'real hosting search'
 ```
 
 GitHub Actions checks formatting, builds, runs the core browser tests and deploys the static artifact to Pages. README/docs-only changes do not redeploy application assets.
 
 ## Verification and limits
 
-[Verification](docs/VERIFICATION.md) records local checks and real media playback. [Deployment](docs/DEPLOYMENT.md) records the published-site result. Physical phone installation remains unverified in this session.
+[Verification](docs/VERIFICATION.md) records embedded playback. [Backend verification](docs/BACKEND-VERIFICATION.md) separates working search from blocked extraction. [Deployment](docs/DEPLOYMENT.md) records the original published-site result. Physical phone installation remains unverified in this session. Automated failure-recovery tests use intercepted responses and do not establish host media playback.
 
 This is an independent app, not the full signed-in YouTube website. Full account sign-in cannot be supplied by this static embedded-player architecture. VibeTube does not claim ad blocking, forced resolution, native-app parity or guaranteed background playback.
 

@@ -1,5 +1,7 @@
 # In-app playback verification — 20 October 2026
 
+Release 3.1 adds verified hosted live search, optional HTML5 playback and adapted sponsor-timestamp logic. See [backend verification](BACKEND-VERIFICATION.md) for the current results and hosting-IP blocker. The release 3 record below predates those additions. The latest deterministic suite has eight passing tests; both separately enabled real search and real embedded-playback tests also pass on the desktop preview.
+
 Release 3 replaces the external launcher with a persistent embedded YouTube player.
 
 - Formatting and TypeScript/Vite build: PASS.

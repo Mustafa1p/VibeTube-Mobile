@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Video } from "./data";
 import { read, write } from "./storage";
 import { ChevronDown, Maximize2, X, Play, Pause } from "lucide-react";
+import { resolveMedia } from "./backend";
+import { sponsorSegments, type Segment } from "./enhancements/sponsorBlock";
 declare global {
   interface Window {
     YT: any;
@@ -53,14 +55,18 @@ export default function Player({
     ready = useRef(false);
   const [error, setError] = useState(""),
     [playing, setPlaying] = useState(false),
-    [retry, setRetry] = useState(0);
+    [retry, setRetry] = useState(0),
+    [media, setMedia] = useState(""),
+    [resolving, setResolving] = useState(false),
+    [segments, setSegments] = useState<Segment[]>([]),
+    [sponsorStatus, setSponsorStatus] = useState("");
   current.current = video;
   useEffect(() => {
     let disposed = false;
     ready.current = false;
     setError("");
     setPlaying(false);
-    if (video.provider === "direct") return;
+    if (video.provider === "backend") return;
     const node = document.createElement("div");
     const loadTimeout = setTimeout(() => {
       if (!disposed && !ready.current)
@@ -140,7 +146,42 @@ export default function Player({
       });
   }, [video.id]);
   useEffect(() => {
-    if (video.provider !== "direct" || !("mediaSession" in navigator)) return;
+    if (video.provider !== "backend") return;
+    const c = new AbortController();
+    setMedia("");
+    setError("");
+    setResolving(true);
+    resolveMedia(video.id, c.signal)
+      .then((d) => {
+        if (!c.signal.aborted) setMedia(d.url);
+      })
+      .catch((e) => {
+        if (!c.signal.aborted) setError(e.message);
+      })
+      .finally(() => {
+        if (!c.signal.aborted) setResolving(false);
+      });
+    return () => c.abort();
+  }, [video.id, video.provider, retry]);
+  useEffect(() => {
+    setSegments([]);
+    setSponsorStatus("");
+    if (video.provider !== "backend" || !read("sponsor-skip", false)) return;
+    const c = new AbortController();
+    sponsorSegments(video.id, c.signal)
+      .then((s) => {
+        if (!c.signal.aborted) setSegments(s);
+      })
+      .catch(() => {
+        if (!c.signal.aborted)
+          setSponsorStatus(
+            "Sponsor skipping unavailable. Playback is unaffected.",
+          );
+      });
+    return () => c.abort();
+  }, [video.id, video.provider]);
+  useEffect(() => {
+    if (video.provider !== "backend" || !("mediaSession" in navigator)) return;
     const s = navigator.mediaSession;
     s.metadata = new MediaMetadata({
       title: video.title,
@@ -177,7 +218,7 @@ export default function Player({
       }
       s.metadata = null;
     };
-  }, [video.id]);
+  }, [video.id, video.provider]);
   return (
     <section
       className={"player " + (expanded ? "expanded" : "mini")}
@@ -196,14 +237,14 @@ export default function Player({
         </button>
       </div>
       <div className="player-screen">
-        {video.provider === "direct" ? (
+        {video.provider === "backend" ? (
           <video
             key={retry}
             ref={direct}
             controls
             playsInline
             preload="metadata"
-            src="https://media.w3.org/2010/05/bunny/trailer.mp4"
+            src={media || undefined}
             onLoadedMetadata={() => {
               if (direct.current)
                 direct.current.currentTime =
@@ -215,6 +256,21 @@ export default function Player({
             }}
             onPause={() => setPlaying(false)}
             onTimeUpdate={() => {
+              const el = direct.current;
+              if (el && !el.paused && Number.isFinite(el.duration)) {
+                const skip = segments.find(
+                  (s) =>
+                    el.currentTime >= s.segment[0] &&
+                    el.currentTime < s.segment[1] &&
+                    s.segment[1] < el.duration,
+                );
+                if (skip) {
+                  el.currentTime = skip.segment[1];
+                  setSponsorStatus(
+                    "Skipped a community-reported sponsor segment.",
+                  );
+                }
+              }
               if (direct.current)
                 write("positions", {
                   ...read("positions", {}),
@@ -229,6 +285,26 @@ export default function Player({
           <div ref={host} className="youtube-host" />
         )}
       </div>
+      {resolving && <p role="status">Connecting to the media server…</p>}
+      {sponsorStatus && <p role="status">{sponsorStatus}</p>}
+      {video.provider === "backend" && media && (
+        <label className="v-speed">
+          Playback speed{" "}
+          <select
+            aria-label="Playback speed"
+            defaultValue="1"
+            onChange={(e) => {
+              if (direct.current)
+                direct.current.playbackRate = Number(e.target.value);
+            }}
+          >
+            <option value="0.5">0.5×</option>
+            <option value="1">1×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </label>
+      )}
       {error && (
         <div className="player-error" role="alert">
           {error}
@@ -241,7 +317,7 @@ export default function Player({
           <button
             aria-label={playing ? "Pause video" : "Play video"}
             onClick={() => {
-              if (video.provider === "direct") {
+              if (video.provider === "backend") {
                 if (direct.current?.paused)
                   void direct.current
                     .play()

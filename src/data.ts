@@ -5,7 +5,7 @@ export interface Video {
   channel: string;
   category: string;
   description?: string;
-  provider?: "direct";
+  provider?: "backend";
   thumbnail?: string;
 }
 export const catalog: Video[] = videos;

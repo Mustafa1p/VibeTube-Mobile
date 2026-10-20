@@ -17,6 +17,8 @@ import { catalog, lookup, thumb, videoId } from "./data";
 import type { Video } from "./data";
 import { read, write } from "./storage";
 import "./video.css";
+import BackendSettings from "./BackendSettings";
+import { backendEnabled, searchBackend, liveSearchEnabled } from "./backend";
 const base = import.meta.env.BASE_URL;
 function getRoute() {
   try {
@@ -38,6 +40,11 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
     ),
     [message, setMessage] = useState(""),
     [loading, setLoading] = useState(false),
+    [useBackend, setUseBackend] = useState(backendEnabled),
+    [liveSearch, setLiveSearch] = useState(liveSearchEnabled),
+    [results, setResults] = useState<Video[]>([]),
+    [searchTerm, setSearchTerm] = useState(""),
+    [searchRequest, setSearchRequest] = useState(0),
     [allowed, setAllowed] = useState(() => read("video-consent", false));
   const nav = (v: string) => {
     location.hash = encodeURIComponent(v);
@@ -57,18 +64,43 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
     const c = new AbortController();
     setLoading(true);
     lookup(id, c.signal)
-      .then(setActive)
+      .then((v) =>
+        setActive({ ...v, provider: useBackend ? "backend" : undefined }),
+      )
       .catch((e) => {
         if (e.name !== "AbortError") setMessage(e.message);
       })
       .finally(() => {
         if (!c.signal.aborted) setLoading(false);
       });
-    return () => c.abort();
-  }, [route, active?.id, allowed]);
+    return () => {
+      c.abort();
+      setLoading(false);
+    };
+  }, [route, active?.id, allowed, useBackend]);
+  useEffect(() => {
+    if (!liveSearch || !allowed || route !== "search" || !searchTerm) return;
+    const c = new AbortController();
+    setLoading(true);
+    setResults([]);
+    searchBackend(searchTerm, c.signal)
+      .then((items) => {
+        if (!c.signal.aborted) setResults(items);
+      })
+      .catch((e) => {
+        if (!c.signal.aborted) setMessage(e.message);
+      })
+      .finally(() => {
+        if (!c.signal.aborted) setLoading(false);
+      });
+    return () => {
+      c.abort();
+      setLoading(false);
+    };
+  }, [route, searchTerm, searchRequest, liveSearch, allowed]);
   const watch = !!active && route === "watch/" + active.id;
   const play = (v: Video) => {
-    setActive(v);
+    setActive({ ...v, provider: useBackend ? "backend" : undefined });
     nav("watch/" + v.id);
   };
   const save = (v: Video) => {
@@ -87,6 +119,8 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
     const id = videoId(q);
     nav(id ? "watch/" + id : "search");
     setQuery(q);
+    setSearchTerm(q);
+    setSearchRequest((n) => n + 1);
   };
   const started = (v: Video) =>
     setRecent((old) => {
@@ -101,16 +135,18 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
         ? recent
         : route.startsWith("playlist/")
           ? playlists[route.slice(9)] || []
-          : catalog.filter(
-              (v) =>
-                (category === "All" ||
-                  route === "search" ||
-                  v.category === category) &&
-                (route !== "search" ||
-                  (v.title + " " + v.channel + " " + v.category)
-                    .toLowerCase()
-                    .includes(query.toLowerCase())),
-            );
+          : route === "search" && liveSearch
+            ? results
+            : catalog.filter(
+                (v) =>
+                  (category === "All" ||
+                    route === "search" ||
+                    v.category === category) &&
+                  (route !== "search" ||
+                    (v.title + " " + v.channel + " " + v.category)
+                      .toLowerCase()
+                      .includes(query.toLowerCase())),
+              );
   const addLater = (v: Video) => {
     const p = {
       ...playlists,
@@ -141,7 +177,11 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
               {v.title}
             </button>
             <p>{v.channel}</p>
-            <small>YouTube · Curated collection</small>
+            <small>
+              {route === "search" && liveSearch
+                ? "YouTube · Search result"
+                : "YouTube · Video"}
+            </small>
           </div>
           <button
             className="v-save"
@@ -182,7 +222,8 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
           <p>
             VibeTube uses YouTube's embedded player and thumbnails. Google may
             receive your IP address, browser data and cookies, and may serve
-            ads. Saved items stay on this device.
+            ads. Saved items stay on this device. Live search sends your search
+            terms to VibeTube’s hosting server.
           </p>
           <p>
             By continuing, you agree to the{" "}
@@ -241,22 +282,32 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                 >
                   <input
                     autoFocus
-                    aria-label="Search collection or paste a YouTube link"
+                    aria-label="Search videos or paste a YouTube link"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search collection or paste a YouTube link"
+                    placeholder="Search videos or paste a YouTube link"
                   />
                   <button aria-label="Submit search">
                     <Search />
                   </button>
                 </form>
                 <p>
-                  Search this collection, or paste a YouTube video link to play
-                  it here.
+                  {liveSearch
+                    ? "Search public YouTube videos through VibeTube’s server, or paste a video link."
+                    : "Search this collection, or paste a YouTube video link to play it here."}
                 </p>
               </section>
             )}
-            {watch && active ? (
+            {route === "playback-settings" ? (
+              <BackendSettings
+                onChange={() => {
+                  setActive(null);
+                  setUseBackend(backendEnabled());
+                  setLiveSearch(liveSearchEnabled());
+                  setResults([]);
+                }}
+              />
+            ) : watch && active ? (
               <section className="v-watch">
                 <h1>{active.title}</h1>
                 <p className="v-meta">
@@ -294,6 +345,15 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
               <section className="v-library">
                 <h1>Your library</h1>
                 <p>Saved on this device · No account synchronization</p>
+                <button
+                  onClick={() => {
+                    setActive(null);
+                    nav("playback-settings");
+                  }}
+                >
+                  <Settings />
+                  Playback settings
+                </button>
                 <button onClick={() => nav("saved")}>
                   <Bookmark />
                   Saved videos<span>{saved.length}</span>

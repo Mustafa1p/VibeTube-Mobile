@@ -311,8 +311,10 @@ export default function App() {
             player. The app does not forward you to the YouTube website.
           </p>
           <p>
-            Search covers the curated collection. Paste a public YouTube video
-            link to load another video directly. No developer API key is needed.
+            Search sends your query to VibeTube’s hosting server to find public
+            YouTube videos. You can turn live search off in You → Playback
+            settings to search only the collection. No developer API key is
+            needed.
           </p>
           <p>
             Saved videos, playlists, history and playback positions stay in this
@@ -323,7 +325,10 @@ export default function App() {
           <p>
             Google receives player and thumbnail requests and may serve cookies
             and ads. VibeTube has no password form, analytics, or account
-            server. GitHub serves the app and may retain hosting logs.
+            server. GitHub serves the app and may retain hosting logs. The media
+            server is hosted at vibetubemobile.ipxer.online. Its experimental
+            video mode is off by default because YouTube rejected playback
+            extraction from the hosting IP during verification.
           </p>
           <p>
             Playback and available controls depend on YouTube and the video's

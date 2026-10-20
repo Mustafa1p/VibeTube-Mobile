@@ -500,3 +500,33 @@
     font-size: 8px;
   }
 }
+.v-backend-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+.v-library .v-backend-toggle input {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  padding: 0;
+}
+.v-playback-settings > p,
+.v-playback-settings label {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.v-speed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px;
+}
+.v-speed select {
+  min-height: 44px;
+  color: #fff;
+  background: #242428;
+  border-radius: 8px;
+}
