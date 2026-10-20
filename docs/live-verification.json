@@ -1,0 +1,58 @@
+{
+  "checkedAt": "2026-10-20T01:04:12.362Z",
+  "url": "https://mustafa1p.github.io/VibeTube-Mobile/",
+  "physicalDevice": "UNVERIFIED",
+  "accountLogin": "No credentials entered; official login destination only",
+  "httpsStatus": 200,
+  "title": "VibeTube Mobile — Your next watch starts here",
+  "browserShowsInstallGuide": true,
+  "browserHasNoLaunchButton": true,
+  "manifest": {
+    "status": 200,
+    "id": "/VibeTube-Mobile/",
+    "start_url": "/VibeTube-Mobile/",
+    "scope": "/VibeTube-Mobile/",
+    "display": "standalone"
+  },
+  "assets": [
+    {
+      "path": "icon-192.png",
+      "status": 200
+    },
+    {
+      "path": "icon-512.png",
+      "status": 200
+    },
+    {
+      "path": "icon-maskable.png",
+      "status": 200
+    },
+    {
+      "path": "apple-touch-icon.png",
+      "status": 200
+    },
+    {
+      "path": "youtube.svg",
+      "status": 200
+    },
+    {
+      "path": "sw.js",
+      "status": 200
+    }
+  ],
+  "scriptAssets": ["/VibeTube-Mobile/assets/index-C1L_8QRy.js"],
+  "androidDeepLinkRefresh": true,
+  "serviceWorkerScope": "https://mustafa1p.github.io/VibeTube-Mobile/",
+  "offlineShell": true,
+  "emulatedInstalledLauncher": true,
+  "officialHome": {
+    "origin": "https://m.youtube.com",
+    "path": "/"
+  },
+  "officialSignIn": {
+    "origin": "https://accounts.google.com",
+    "path": "/v3/signin/identifier",
+    "title": "YouTube"
+  },
+  "uncaughtApplicationErrors": []
+}
