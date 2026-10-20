@@ -103,15 +103,11 @@ export default forwardRef<PlayerHandle, Props>(function Player(
     onEnded,
   });
   callbacks.current = { onStarted, onPlaybackChange, onLoadingChange, onEnded };
-  function load(v: Video, gesture = false) {
+  function load(v: Video) {
     current.current = v;
     if (!ready.current) return;
     mutedAttempt.current = false;
     finished.current = "";
-    if (gesture) {
-      player.current.unMute?.();
-      setMuted(false);
-    }
     setError("");
     const alreadyPlaying =
       loaded.current === v.id && player.current.getPlayerState?.() === 1;
@@ -133,7 +129,7 @@ export default forwardRef<PlayerHandle, Props>(function Player(
   }
   // Called directly from a card click to retain user activation where supported.
   useImperativeHandle(ref, () => ({
-    select: (v) => load(v, true),
+    select: (v) => load(v),
     pause: () => player.current?.pauseVideo?.(),
   }));
   useEffect(() => {
@@ -163,6 +159,7 @@ export default forwardRef<PlayerHandle, Props>(function Player(
           videoId: current.current.id,
           playerVars: {
             autoplay: 1,
+            mute: 1,
             playsinline: 1,
             origin: location.origin,
             rel: 0,
@@ -172,6 +169,8 @@ export default forwardRef<PlayerHandle, Props>(function Player(
               if (disposed) return;
               ready.current = true;
               clearTimeout(timeout);
+              player.current.mute?.();
+              setMuted(true);
               load(current.current);
             },
             onStateChange: (e: any) => {
@@ -324,9 +323,7 @@ export default forwardRef<PlayerHandle, Props>(function Player(
               if (ready.current) {
                 if (playing) player.current.pauseVideo();
                 else {
-                  player.current.unMute?.();
                   player.current.playVideo();
-                  setMuted(false);
                 }
               }
             }}

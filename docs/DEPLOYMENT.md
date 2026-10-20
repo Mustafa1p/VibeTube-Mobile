@@ -1,6 +1,14 @@
-# Published VibeTube 3.4.2
+# Published VibeTube 3.5.0
 
-**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.4.2
+**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.5.0
+
+Release 3.5.0 starts the standard player muted and offers one-tap **Unmute**. Switching videos preserves the sound choice within the mounted player. Channel names and photos open an in-app channel page with a Videos feed, pagination, retry and Back. The backend accepts a validated source video ID, resolves its official owner through YouTube metadata, and loads that owner's Videos tab. It does not substitute a text search for channel ownership.
+
+The gateway was deployed atomically after remote PHP lint. Live checks returned twenty NoCopyrightSounds uploads per page with the correct channel ID on pages one and two. A browser check played a real Blender video muted, enabled sound in one tap and opened forty Blender uploads while retaining the iframe. [Observed results](channel-playback-verification.json). Chromium and targeted WebKit fixtures cover channel name/photo navigation, retry, pagination, reload, Back, player retention and sound controls. Physical iPhone behavior remains unverified.
+
+![Channel page inside VibeTube](screenshots/channel-page.png)
+
+## Earlier release 3.4.2 deployment
 
 Application commit: `9239893f99ca0d2e744b5d955c67ae0d2428c327`. [Successful build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39367078196).
 
@@ -63,7 +71,7 @@ The embedded player retains YouTube's own native controls and branding. The app 
 
 ## Updating an existing installation
 
-Tap **Update now** in the centered popup. The app stops playback and reloads automatically. About should display **VibeTube Mobile 3.4.2**. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3.4.2` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
+Tap **Update now** in the centered popup. The app stops playback and reloads automatically. About should display **VibeTube Mobile 3.5.0**. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3.5.0` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
 
 ## Remaining physical check
 

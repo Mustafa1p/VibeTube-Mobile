@@ -6,7 +6,7 @@ const cache = new Map<
   string,
   { expires: number; items: Video[]; hasMore: boolean }
 >();
-export function useDiscovery(query: string) {
+export function useDiscovery(query: string, channelVideo = "") {
   const [items, setItems] = useState<Video[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,12 +23,12 @@ export function useDiscovery(query: string) {
     setLoading(true);
     setError("");
     try {
-      const key = `${q}:${n}`;
+      const key = `${channelVideo ? "channel:" + channelVideo : q}:${n}`;
       const cached = cache.get(key);
       const result =
         !refresh && cached && cached.expires > Date.now()
           ? cached
-          : await searchPage(q, n, c.signal);
+          : await searchPage(q, n, c.signal, channelVideo);
       if (c.signal.aborted) return;
       if (cache.size >= 50) cache.delete(cache.keys().next().value!);
       cache.set(key, { ...result, expires: Date.now() + 300000 });
@@ -64,7 +64,7 @@ export function useDiscovery(query: string) {
     controller.current = c;
     void load(query, 1, c, attempt > 0);
     return () => controller.current?.abort();
-  }, [query, attempt]);
+  }, [query, channelVideo, attempt]);
   return {
     items,
     loading,

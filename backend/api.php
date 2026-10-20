@@ -135,25 +135,40 @@ if ($action === 'suggest') {
     if ($code !== 200 || !is_array($d[1] ?? null)) reply(['error' => 'Search suggestions are temporarily unavailable. You can still submit your search.'], 502);
     reply(['suggestions' => array_slice(array_values(array_filter($d[1], fn($v) => is_string($v) && mb_strlen($v) <= 150)), 0, 8)]);
 }
-if ($action === 'search') {
-    $q = $_GET['q'] ?? '';
+if (in_array($action, ['search', 'channel'], true)) {
+    $q = $action === 'channel' ? ($_GET['video'] ?? '') : ($_GET['q'] ?? '');
+    if ($action === 'channel' && (!is_string($q) || !preg_match('/^[\w-]{11}$/D', $q))) reply(['error' => 'Invalid channel video.'], 400);
     if (!is_string($q) || mb_strlen(trim($q)) < 1 || mb_strlen($q) > 200) reply(['error' => 'Enter a search up to 200 characters.'], 400);
     $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 5]]);
     if ($page === false) reply(['error' => 'Invalid results page.'], 400);
     $searchDir = "$runtime/search";
     if (!is_dir($searchDir)) mkdir($searchDir, 0700);
-    $cache = "$searchDir/" . hash('sha256', 'v3:' . $page . ':' . trim($q)) . '.json';
+    $cache = "$searchDir/" . hash('sha256', $action . ':v5:' . $page . ':' . trim($q)) . '.json';
     if (is_file($cache) && filemtime($cache) > time() - 300) {
         $cached = json_decode(file_get_contents($cache), true);
         if (is_array($cached)) reply($cached);
     }
-    $d = extractSearch(['--flat-playlist', '--playlist-start', (string)(($page - 1) * 20 + 1), 'ytsearch' . ($page * 20) . ':' . trim($q)]);
+    $target = 'ytsearch' . ($page * 20) . ':' . trim($q);
+    if ($action === 'channel') {
+        $ch = curl_init('https://www.youtube.com/oembed?url=' . rawurlencode('https://www.youtube.com/watch?v=' . $q) . '&format=json');
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 8, CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+            CURLOPT_SSL_VERIFYPEER => true]);
+        $raw = curl_exec($ch); $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE); curl_close($ch);
+        $meta = $status === 200 && is_string($raw) ? json_decode($raw, true) : null;
+        $author = parse_url($meta['author_url'] ?? '');
+        if (($author['scheme'] ?? '') !== 'https' || ($author['host'] ?? '') !== 'www.youtube.com' ||
+            !preg_match('~^/(?:@[A-Za-z0-9_.%\x{0080}-\x{FFFF}-]{1,200}|channel/UC[\w-]{22}|user/[\w.-]{1,100}|c/[\w.-]{1,100})$~uD', $author['path'] ?? ''))
+            reply(['error' => 'This channel could not be resolved. Try another video from the channel.'], 502);
+        $target = 'https://www.youtube.com' . $author['path'] . '/videos';
+    }
+    $d = extractSearch(['--yes-playlist', '--flat-playlist', '--playlist-start', (string)(($page - 1) * 20 + 1), '--playlist-end', (string)($page * 20), $target]);
     $items = [];
     foreach (array_slice($d['entries'] ?? [], 0, 20) as $v) {
         if (!preg_match('/^[\w-]{11}$/D', $v['id'] ?? '')) continue;
         $items[] = ['id' => $v['id'], 'title' => mb_substr($v['title'] ?? 'Video', 0, 300),
-            'channel' => mb_substr($v['channel'] ?? $v['uploader'] ?? 'YouTube', 0, 150),
-            'channelId' => preg_match('/^UC[\w-]{22}$/D', $v['channel_id'] ?? '') ? $v['channel_id'] : null, 'category' => 'Videos'];
+            'channel' => mb_substr($v['channel'] ?? $v['uploader'] ?? $d['channel'] ?? $d['uploader'] ?? $meta['author_name'] ?? 'YouTube', 0, 150),
+            'channelId' => preg_match('/^UC[\w-]{22}$/D', $v['channel_id'] ?? $d['channel_id'] ?? '') ? ($v['channel_id'] ?? $d['channel_id']) : null, 'category' => 'Videos'];
     }
     $files = glob("$searchDir/*.json") ?: [];
     usort($files, fn($a, $b) => filemtime($a) <=> filemtime($b));

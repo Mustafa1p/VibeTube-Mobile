@@ -25,7 +25,7 @@ test("real hosting search returns videos through browser CORS", async ({
   await expect(page.locator(".v-card").first()).toContainText("Search result");
 });
 
-test("standard player ignores old settings and retries blocked playback muted without a tap prompt", async ({
+test("standard player starts muted, unmutes in one tap and preserves sound on selection", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -80,6 +80,10 @@ test("standard player ignores old settings and retries blocked playback muted wi
   await expect
     .poll(() => page.evaluate(() => (window as any).calls))
     .toContain("load:aqz-KE-bpKQ");
+  await expect(
+    page.getByRole("button", { name: "Unmute video" }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => (window as any).calls[0])).toBe("mute");
   await page.evaluate(() => {
     (window as any).blockPlayback();
     (window as any).blockPlayback();
@@ -88,7 +92,7 @@ test("standard player ignores old settings and retries blocked playback muted wi
     await page.evaluate(
       () => (window as any).calls.filter((v: string) => v === "mute").length,
     ),
-  ).toBe(1);
+  ).toBe(2);
   await expect(
     page.getByText("Your browser requires a tap to start this video."),
   ).toHaveCount(0);
@@ -100,6 +104,11 @@ test("standard player ignores old settings and retries blocked playback muted wi
   await expect
     .poll(() => page.evaluate(() => (window as any).calls))
     .toContain("load:eRsGyueVLvQ");
+  expect(
+    await page.evaluate(
+      () => (window as any).calls.filter((v: string) => v === "unmute").length,
+    ),
+  ).toBe(1);
   expect(mediaRequests).toEqual([]);
   await expect(page.locator(".player video")).toHaveCount(0);
   await page.getByRole("button", { name: "You", exact: true }).click();

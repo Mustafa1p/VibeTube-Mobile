@@ -14,6 +14,7 @@ import {
   Music2,
 } from "lucide-react";
 import Player, { warmPlayer, type PlayerHandle } from "./Player";
+import ChannelPage from "./ChannelPage";
 import ChannelAvatar from "./ChannelAvatar";
 import { catalog, lookup, thumb, videoId } from "./data";
 import type { Video } from "./data";
@@ -36,6 +37,9 @@ function getRoute() {
 export default function VideoApp({ onAbout }: { onAbout: () => void }) {
   const [route, setRoute] = useState(getRoute),
     [active, setActive] = useState<Video | null>(null),
+    [channels, setChannels] = useState<Record<string, Video>>(() =>
+      read("channel-sources", {}),
+    ),
     [query, setQuery] = useState(""),
     [category, setCategory] = useState("All"),
     [saved, setSaved] = useState<Video[]>(() => read("saved", [])),
@@ -209,6 +213,14 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
       setMessage("Added to Watch later");
     } else setMessage("Storage is full.");
   };
+  const openChannel = (v: Video) => {
+    const sources = Object.fromEntries(
+      Object.entries({ ...channels, [v.id]: v }).slice(-30),
+    );
+    setChannels(sources);
+    write("channel-sources", sources);
+    nav("channel/" + v.id);
+  };
   function card(v: Video) {
     return (
       <article className="v-card" key={v.id}>
@@ -220,12 +232,24 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
           <img src={thumb(v)} alt="" loading="lazy" />
         </button>
         <div className="v-card-copy">
-          <ChannelAvatar video={v} />
+          <button
+            className="v-channel-avatar"
+            aria-label={`Open ${v.channel} channel photo`}
+            onClick={() => openChannel(v)}
+          >
+            <ChannelAvatar video={v} />
+          </button>
           <div>
             <button className="v-title" onClick={() => play(v)}>
               {v.title}
             </button>
-            <p>{v.channel}</p>
+            <button
+              className="v-channel-name"
+              aria-label={`Open ${v.channel} channel`}
+              onClick={() => openChannel(v)}
+            >
+              {v.channel}
+            </button>
             <small>
               {route === "search" && liveSearch
                 ? "YouTube · Search result"
@@ -427,6 +451,16 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                   setLiveSearch(liveSearchEnabled());
                 }}
               />
+            ) : route.startsWith("channel/") ? (
+              <ChannelPage
+                videoId={route.slice(8)}
+                source={channels[route.slice(8)]}
+                live={liveSearch}
+                card={card}
+                onBack={() =>
+                  history.length > 1 ? history.back() : nav("home")
+                }
+              />
             ) : route === "music" ? (
               <MusicLibrary
                 tracks={music}
@@ -472,10 +506,23 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
             ) : watch && active ? (
               <section className="v-watch">
                 <h1>{active.title}</h1>
-                <p className="v-meta">
-                  <ChannelAvatar video={active} />
-                  {active.channel} · Playing inside VibeTube
-                </p>
+                <div className="v-meta">
+                  <button
+                    className="v-channel-avatar"
+                    aria-label={`Open ${active.channel} channel photo`}
+                    onClick={() => openChannel(active)}
+                  >
+                    <ChannelAvatar video={active} />
+                  </button>
+                  <button
+                    className="v-channel-name"
+                    aria-label={`Open ${active.channel} channel`}
+                    onClick={() => openChannel(active)}
+                  >
+                    {active.channel}
+                  </button>
+                  <span>Playing inside VibeTube</span>
+                </div>
                 <div className="v-watch-actions">
                   <button onClick={() => save(active)}>
                     <Bookmark size={18} />

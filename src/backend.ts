@@ -53,10 +53,13 @@ export async function searchPage(
   q: string,
   page: number,
   signal: AbortSignal,
+  channelVideo = "",
 ): Promise<{ items: Video[]; hasMore: boolean }> {
   const data = await backendRequest(
-    "search",
-    { q, page: String(page) },
+    channelVideo ? "channel" : "search",
+    channelVideo
+      ? { video: channelVideo, page: String(page) }
+      : { q, page: String(page) },
     signal,
   );
   if (!Array.isArray(data.items)) throw Error("Invalid search response.");
