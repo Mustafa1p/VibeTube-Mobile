@@ -41,7 +41,7 @@ flowchart LR
 
 The browser version presents installation instructions only. The launcher controls appear when VibeTube detects standalone mode through the browser's `display-mode` signal or iOS's `navigator.standalone`. Installation eligibility and the native install interface remain under browser control. This UI gate is a product behavior, not a security boundary or a restriction on opening YouTube independently.
 
-For account access, tap **Open YouTube account**, or use YouTube's profile icon → **Sign in**. Google handles the login directly. VibeTube cannot inspect that session, reuse your cookies, or tell whether you are signed in.
+For account access, tap **Sign in on YouTube**, or use YouTube's profile icon → **Sign in**. Google handles the login directly. VibeTube cannot inspect that session, reuse your cookies, or tell whether you are signed in.
 
 ## Installation
 

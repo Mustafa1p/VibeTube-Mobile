@@ -169,7 +169,9 @@ export default function App() {
     if (!installed || !online || pending) return;
     setPending(true);
     setNotice("Opening official YouTube…");
-    window.location.assign(account ? youtube + "account" : youtube);
+    window.location.assign(
+      account ? "https://www.youtube.com/signin?next=%2F" : youtube,
+    );
   };
   const inApp = /FBAN|FBAV|Instagram|Line\/|TikTok|wv\)/i.test(
     navigator.userAgent,
@@ -282,7 +284,7 @@ export default function App() {
                 disabled={!online || pending}
                 onClick={() => launch(true)}
               >
-                Open YouTube account <ExternalLink size={16} />
+                Sign in on YouTube <ExternalLink size={16} />
               </button>
               <p className="handoff">
                 YouTube opens in your browser or the YouTube app. Sign in there

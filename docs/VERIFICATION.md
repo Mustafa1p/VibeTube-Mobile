@@ -20,7 +20,7 @@ Environment: Windows, Node.js 22.17.0, Vite production preview, Playwright deskt
 | iPhone and Android guide links                      | Hash selection, device switching and refresh tested                                      |
 | Installed launcher                                  | Emulated standalone signal exposes launch controls                                       |
 | Open YouTube                                        | Navigation to `https://m.youtube.com/` tested at a controlled destination boundary       |
-| Account access                                      | Navigation to `https://m.youtube.com/account` tested at that boundary                    |
+| Account access                                      | Navigation to `https://www.youtube.com/signin?next=%2F` tested at that boundary          |
 | Browser back                                        | Returning to VibeTube leaves account action usable                                       |
 | Android prompt                                      | Dismissal handled; `appinstalled` alone does not unlock the browser page                 |
 | Manifest and icons                                  | `/VibeTube-Mobile/` id/start_url/scope, standalone display and PNG responses tested      |

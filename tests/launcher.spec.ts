@@ -44,6 +44,12 @@ test("installed launch and account handoff use only official YouTube", async ({
       body: "<title>YouTube navigation boundary</title>",
     }),
   );
+  await page.route("https://www.youtube.com/signin**", (r) =>
+    r.fulfill({
+      contentType: "text/html",
+      body: "<title>Official sign-in navigation boundary</title>",
+    }),
+  );
   await page.goto("");
   await expect(
     page.getByRole("button", { name: "Open YouTube", exact: true }),
@@ -53,12 +59,12 @@ test("installed launch and account handoff use only official YouTube", async ({
   await expect(page).toHaveURL("https://m.youtube.com/");
   await page.goBack();
   await expect(
-    page.getByRole("button", { name: "Open YouTube account", exact: true }),
+    page.getByRole("button", { name: "Sign in on YouTube", exact: true }),
   ).toBeEnabled();
   await page
-    .getByRole("button", { name: "Open YouTube account", exact: true })
+    .getByRole("button", { name: "Sign in on YouTube", exact: true })
     .click();
-  await expect(page).toHaveURL("https://m.youtube.com/account");
+  await expect(page).toHaveURL("https://www.youtube.com/signin?next=%2F");
 });
 test("offline app shell survives reload and disables network launch", async ({
   page,
