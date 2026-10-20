@@ -177,7 +177,10 @@ test("centered update popup defers or applies in one tap while player is open", 
     await expect(page.locator(".player")).toBeVisible();
     await page.reload();
     await expect(popup).toBeVisible();
-    await popup.getByRole("button", { name: "Update now" }).click();
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "domcontentloaded" }),
+      popup.getByRole("button", { name: "Update now" }).click(),
+    ]);
     await expect(
       page.locator(".notice").filter({ hasText: "Close the player" }),
     ).toHaveCount(0);
