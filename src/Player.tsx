@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import SponsorControls from "./SponsorControls";
 import type { Video } from "./data";
 import { read, write } from "./storage";
 import {
@@ -291,6 +292,7 @@ export default forwardRef<PlayerHandle, Props>(function Player(
       <div className="player-screen">
         <div ref={host} className="youtube-host" />
       </div>
+      <SponsorControls videoId={video.id} player={player} />
       {muted && (
         <button
           className="player-unmute"

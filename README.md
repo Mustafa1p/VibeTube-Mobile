@@ -46,9 +46,15 @@ An ordinary browser tab shows installation instructions only. Installation butto
 
 ### Updating an existing installation
 
-When the centered **A playback update is ready** popup appears, tap **Update now**. VibeTube stops the player, applies the update and reloads automatically. **Later** keeps the current session; the popup returns when you reopen the app. Saved music and videos remain on this device. About should display **VibeTube Mobile 3.5.1**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.5.1) to fetch the latest installation shell. Updates do not require a new API key or Google login.
+When the centered **A playback update is ready** popup appears, tap **Update now**. VibeTube stops the player, applies the update and reloads automatically. **Later** keeps the current session; the popup returns when you reopen the app. Saved music and videos remain on this device. About should display **VibeTube Mobile 3.6.0**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.6.0) to fetch the latest installation shell. Updates do not require a new API key or Google login.
 
 The installed app locks page zoom and uses 16px text-entry fields to avoid search-focus enlargement. Normal scrolling remains available. See [mobile viewport verification](docs/MOBILE-VIEWPORT.md).
+
+## SponsorBlock
+
+Enable **Skip sponsors** below the player, or under **You → Playback settings**. Community-reported sponsor segments are skipped automatically, with **Undo skip** to watch a segment. This setting starts off and stays saved locally. SponsorBlock receives your IP address and a four-character video hash prefix; the exact video is matched locally. Requests send no cookies or page referrer.
+
+**YouTube-served ads may still appear.** The webOS app's injected ad blocker cannot run inside an iPhone Home Screen PWA. VibeTube integrates community timestamp skipping through the standard iframe API. [How the webOS approach differs and what was integrated](docs/WEBOS-INTEGRATION.md).
 
 ## Channel pages
 
@@ -78,9 +84,9 @@ Search calls the PHP gateway at `vibetubemobile.ipxer.online`, which uses yt-dlp
 
 Channel photos use validated channel IDs from search results. For older saved videos, the gateway resolves the channel through YouTube oEmbed. It reads public channel-image metadata, caches the URL for a day and returns only trusted YouTube image hosts. Images are loaded near the viewport, with three metadata requests at a time; unavailable photos retain initials. See [backend setup](backend/README.md).
 
-The experimental HTML5 player, media relay endpoints and sponsor-skipping adapter were retired in version 3.3. Old local playback preferences no longer select a different player. Earlier investigation records remain in the verification documents; [historical license notices](public/THIRD-PARTY-LICENSES.txt) are retained.
+The experimental HTML5 player, media relay endpoints and previous sponsor-skipping adapter were retired in version 3.3. Version 3.6 adds an independent, optional SponsorBlock integration for the standard iframe player. Old local playback preferences no longer select a different player. Earlier investigation records remain in the verification documents; [historical license notices](public/THIRD-PARTY-LICENSES.txt) are retained.
 
-The service worker caches a finite set of VibeTube shell assets under `/VibeTube-Mobile/`. It does not cache video streams, account data, or remote YouTube responses. New versions wait for Update now; the update action asks you to close the player before reloading.
+The service worker caches a finite set of VibeTube shell assets under `/VibeTube-Mobile/`. It does not cache video streams, account data, or remote YouTube responses. New versions wait for Update now; the update action stops the player and reloads automatically.
 
 Google receives requests when the player, thumbnails or channel photos are loaded, and may use cookies or serve ads. Live search and channel-photo lookups reach our hosting provider; search results are cached for five minutes and successful avatar metadata for a day. The player notice and settings describe these requests. VibeTube stores collections and resume positions locally; it has no Google credentials, account server, or analytics.
 

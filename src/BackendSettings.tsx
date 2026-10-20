@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { liveSearchEnabled } from "./backend";
+import { useSponsorPreference } from "./sponsorBlock";
 import { write } from "./storage";
 export default function BackendSettings({
   onChange,
 }: {
   onChange: () => void;
 }) {
+  const sponsor = useSponsorPreference();
   const [liveSearch, setLiveSearch] = useState(liveSearchEnabled),
     [status, setStatus] = useState("");
   return (
@@ -16,6 +18,24 @@ export default function BackendSettings({
         playback immediately. If sound is blocked, playback tries muted; use
         Unmute or the player’s volume control to enable sound.
       </p>
+      <h2>SponsorBlock</h2>
+      <p>
+        Skip community-reported sponsor segments inside videos. This does not
+        block YouTube ads. When enabled, SponsorBlock receives your IP address
+        and a four-character video hash prefix, rather than the full video ID.
+        No account or cookies are sent.
+      </p>
+      <label className="v-backend-toggle">
+        <input
+          type="checkbox"
+          checked={sponsor.enabled}
+          onChange={(e) => {
+            if (!sponsor.change(e.target.checked))
+              setStatus("Could not save this setting.");
+          }}
+        />
+        Skip sponsored segments
+      </label>
       <h2>Live search</h2>
       <p>
         Search public YouTube videos using our server. Search terms and your IP

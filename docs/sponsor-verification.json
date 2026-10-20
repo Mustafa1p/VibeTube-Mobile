@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-20T04:27:47.924Z",
+  "url": "http://127.0.0.1:4175/VibeTube-Mobile/",
+  "videoId": "aV81SqB6HQg",
+  "source": "Live SponsorBlock timestamps",
+  "segment": [
+    138.43,
+    154.388
+  ],
+  "afterSkipSeconds": 154.388,
+  "afterUndoSeconds": 138.43,
+  "skipped": true,
+  "undoReturnedToSegment": true,
+  "uncaughtErrors": [],
+  "physicalIPhone": "UNVERIFIED",
+  "youtubeAdBlocking": false
+}

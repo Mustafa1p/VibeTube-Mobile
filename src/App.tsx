@@ -14,7 +14,7 @@ import { usePlatform } from "./platform";
 import { useAppViewport } from "./useAppViewport";
 const Videos = lazy(() => import("./VideoApp"));
 const base = import.meta.env.BASE_URL;
-const release = "3.5.1";
+const release = "3.6.0";
 export default function App() {
   const platform = usePlatform();
   useAppViewport(platform.installed);
@@ -373,6 +373,12 @@ export default function App() {
           <p>
             Playback and available controls depend on YouTube and the video's
             embedding permissions. Background playback is not provided.
+          </p>
+          <p>
+            Optional SponsorBlock skipping looks up community sponsor
+            timestamps. When enabled, sponsor.ajay.app receives your IP address
+            and a four-character video hash prefix. Video matches are selected
+            locally. Sponsor skipping does not block YouTube-served ads.
           </p>
           <div className="privacy-links">
             <a

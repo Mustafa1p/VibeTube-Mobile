@@ -1,6 +1,10 @@
-# Published VibeTube 3.5.1
+# Published VibeTube 3.6.0
 
-**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.5.1
+**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.6.0
+
+Release 3.6.0 adds opt-in SponsorBlock community timestamp skipping through the standard iframe API, with a persistent enable switch, status and Undo. This does not block YouTube-served ads or inject webOS code into the player. [Research, behavior and verification](WEBOS-INTEGRATION.md) · [Real-video observations](sponsor-verification.json).
+
+## Earlier release 3.5.1 deployment
 
 Application commit: `4bef9ff7340ab91a79a28110b73df16e757a0b31`. [Successful build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39367837844). Eighteen deterministic Chromium tests passed in CI; three targeted playback, channel navigation and image checks passed locally in WebKit.
 
@@ -73,7 +77,7 @@ The embedded player retains YouTube's own native controls and branding. The app 
 
 ## Updating an existing installation
 
-Tap **Update now** in the centered popup. The app stops playback and reloads automatically. About should display **VibeTube Mobile 3.5.1**. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3.5.1` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
+Tap **Update now** in the centered popup. The app stops playback and reloads automatically. About should display **VibeTube Mobile 3.6.0**. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3.6.0` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
 
 ## Remaining physical check
 
