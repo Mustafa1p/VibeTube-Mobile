@@ -1,12 +1,18 @@
-# Published VibeTube 3.1
+# Published VibeTube 3.2
 
-**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.1
+**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.2
 
-Application commit: `a43ce20e144a09ab83a970b7a996740461b50c3c`.
+Application commit: `ef055a19e33ee38db2eb308ad99594e80d44f155`.
 
-[Successful GitHub Pages build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39360332276). Formatting, PHP syntax, build and eight deterministic tests passed in CI.
+[Successful GitHub Pages build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39362267902). Formatting, PHP syntax, build and ten deterministic tests passed in CI.
 
 ## Actual published-site verification — 20 October 2026
+
+A fresh Chromium session loaded release 3.2 on Pages with standalone mode emulated. [Current observations](discovery-verification.json) record HTTP 200, 20 Home videos, 20 Music videos, eight autocomplete suggestions, 20 first-page search results and 39 unique videos after Load more. The selected public Blender video played beyond 1.63 seconds without a second Play tap. Twenty compact recommendations appeared below it, with thumbnails approximately 164 px wide at a 390 px viewport. There were no uncaught app errors. [Discovery changes](DISCOVERY-FIX.md) explain the fixes and limits.
+
+Separate targeted WebKit tests passed for discovery and retry. Physical iPhone behavior remains unverified. YouTube's official iframe and branding remain in use; custom server playback is still blocked by YouTube on this hosting IP.
+
+## Earlier release 3.1 playback record
 
 A fresh desktop Chromium session with standalone mode explicitly emulated loaded the deployed app over HTTPS. [Raw observations](live-verification.json) record:
 
@@ -27,7 +33,7 @@ The embedded player retains YouTube's own native controls and branding. The app 
 
 ## Updating an existing installation
 
-If the old launcher is still visible, tap **Update now** when the notice appears, then close and reopen VibeTube from the Home Screen. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
+Close the player, tap **Update now** when the notice appears, then reopen VibeTube from the Home Screen. About should display **VibeTube Mobile 3.2.0**. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3.2` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
 
 ## Remaining physical check
 
