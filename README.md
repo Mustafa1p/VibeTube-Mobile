@@ -43,9 +43,9 @@ YouTube's own visible controls and links remain intact inside the embed. Videos 
 
 An ordinary browser tab shows installation instructions only. Installation buttons cannot silently add an icon. Standalone detection is a UI gate, not a security boundary.
 
-### Updating the previous launcher
+### Updating an existing installation
 
-If you still see **Open YouTube** or **Sign in on YouTube**, you have the old release loaded. Tap **Update now** when it appears, then close and reopen the Home Screen app. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3) to fetch the latest installation shell. Updates do not require a new API key or Google login.
+Close the player, tap **Update now** when it appears, then reopen the Home Screen app. About should display **VibeTube Mobile 3.3.0**. You can also reopen [the current release](https://mustafa1p.github.io/VibeTube-Mobile/?v=3.3) to fetch the latest installation shell. Updates do not require a new API key or Google login.
 
 ## Screens
 

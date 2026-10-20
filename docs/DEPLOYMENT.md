@@ -1,12 +1,18 @@
-# Published VibeTube 3.2
+# Published VibeTube 3.3
 
-**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.2
+**Live:** https://mustafa1p.github.io/VibeTube-Mobile/?v=3.3
 
-Application commit: `ef055a19e33ee38db2eb308ad99594e80d44f155`.
+Application commit: `46671a2465bb092aee252e4b2ae512db06f31aec`.
 
-[Successful GitHub Pages build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39362267902). Formatting, PHP syntax, build and ten deterministic tests passed in CI.
+[Successful GitHub Pages build and deployment](https://github.com/Mustafa1p/VibeTube-Mobile/actions/runs/39363848879). Formatting, PHP syntax, build and ten deterministic tests passed in CI.
 
 ## Actual published-site verification — 20 October 2026
+
+A fresh Chromium session verified release 3.3 on Pages with standalone mode emulated and an old experimental-player preference deliberately set. The app used only the standard iframe player; the real video advanced beyond 1.79 seconds without a second Play tap. Real channel photos loaded in the feed and video metadata row. The extra tap prompt was absent, zero custom-media requests were made, and no uncaught errors were observed. [Current observations](standard-player-verification.json) · [Current player and image behavior](STANDARD-PLAYER.md).
+
+Four targeted WebKit checks passed for player UI, image loading/fallback and discovery. Physical iPhone autoplay remains unverified. Blocked autoplay triggers one muted retry; sound still follows the browser's user-activation rules.
+
+## Earlier release 3.2 discovery record
 
 A fresh Chromium session loaded release 3.2 on Pages with standalone mode emulated. [Current observations](discovery-verification.json) record HTTP 200, 20 Home videos, 20 Music videos, eight autocomplete suggestions, 20 first-page search results and 39 unique videos after Load more. The selected public Blender video played beyond 1.63 seconds without a second Play tap. Twenty compact recommendations appeared below it, with thumbnails approximately 164 px wide at a 390 px viewport. There were no uncaught app errors. [Discovery changes](DISCOVERY-FIX.md) explain the fixes and limits.
 
@@ -33,7 +39,7 @@ The embedded player retains YouTube's own native controls and branding. The app 
 
 ## Updating an existing installation
 
-Close the player, tap **Update now** when the notice appears, then reopen VibeTube from the Home Screen. About should display **VibeTube Mobile 3.2.0**. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3.2` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
+Close the player, tap **Update now** when the notice appears, then reopen VibeTube from the Home Screen. About should display **VibeTube Mobile 3.3.0**. The same manifest identity and project path are retained, so the Home Screen icon does not need to be recreated. The `?v=3.3` link can fetch the current installation shell in a normal browser, but watching still requires launching the installed app.
 
 ## Remaining physical check
 

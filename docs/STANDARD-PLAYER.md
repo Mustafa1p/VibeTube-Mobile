@@ -15,3 +15,5 @@ Channel circles now load actual profile photos instead of always displaying init
 - Physical iPhone installation and autoplay remain unverified.
 
 Older verification documents describe earlier releases and their retired experimental features.
+
+The published Pages release passed the real browser check: channel photos loaded in the feed and watch view, video time advanced beyond 1.79 seconds without an additional Play tap, the extra tap prompt was absent, and no custom-media requests or uncaught errors were observed. An old experimental-player preference was present throughout the check. [Published observations](standard-player-verification.json) · [Successful deployment](DEPLOYMENT.md).
