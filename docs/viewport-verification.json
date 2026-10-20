@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-20T03:28:28.850Z",
+  "url": "https://mustafa1p.github.io/VibeTube-Mobile/?v=3.3.1#search",
+  "search": {
+    "fontSize": "16px",
+    "scale": 1
+  },
+  "playlist": {
+    "fontSize": "16px",
+    "scale": 1
+  },
+  "viewport": "width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover",
+  "touchAction": "pan-x pan-y",
+  "horizontalOverflow": false,
+  "uncaughtErrors": [],
+  "physicalIPhone": "UNVERIFIED: desktop Chromium mobile emulation"
+}

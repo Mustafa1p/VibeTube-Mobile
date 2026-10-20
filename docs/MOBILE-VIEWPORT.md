@@ -7,3 +7,5 @@ In the installed Home Screen app, the viewport requests scale 1 with scaling dis
 The handlers and viewport changes are removed if the app leaves standalone mode. Keyboard opening is not handled by repeatedly resetting scale or forcing focus/blur.
 
 Validation: the production build and formatting checks pass; twelve deterministic Chromium tests and two targeted WebKit tests pass. The viewport checks cover computed 16px field sizes, scale 1 after focusing search and playlist fields, zoom-event cancellation and uncanceled single-touch moves. These are desktop engines with mobile settings and standalone detection emulated, not physical iPhone gesture/keyboard verification. Cross-origin YouTube player controls and operating-system accessibility magnification are outside the page's gesture handlers.
+
+The published app also passed the mobile-emulation check: both text fields reported 16px and scale 1 after focus, the installed viewport lock was active, there was no horizontal overflow, and no uncaught errors were observed. [Published observations](viewport-verification.json) · [Deployment](DEPLOYMENT.md).
