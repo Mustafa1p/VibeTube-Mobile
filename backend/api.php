@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// Public HTTP entry point. Runtime binaries and signed media URLs stay outside public_html.
+// Public HTTP entry point. Search runtime and metadata caches stay outside public_html.
 $runtime = getenv('VIBETUBE_RUNTIME') ?: dirname(__DIR__, 4) . '/vibetube-runtime';
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed = ['https://mustafa1p.github.io', 'https://vibetubemobile.ipxer.online', 'http://127.0.0.1:4175', 'http://127.0.0.1:5173'];
@@ -22,13 +22,7 @@ function reply(array $data, int $status = 200): never {
     echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
     exit;
 }
-function upstreamUrl(string $url): bool {
-    $p = parse_url($url);
-    return $p && ($p['scheme'] ?? '') === 'https' && !isset($p['user'], $p['pass'])
-        && !isset($p['user']) && !isset($p['pass']) && ($p['port'] ?? 443) === 443
-        && preg_match('/^[a-z0-9-]+\.googlevideo\.com$/D', $p['host'] ?? '') === 1;
-}
-function extractVideo(array $args): array {
+function extractSearch(array $args): array {
     global $runtime;
     if (!function_exists('proc_open')) reply(['error' => 'The host disables the extraction runtime.'], 503);
     // At most two extraction processes across PHP workers. Never use shell commands or caller URLs.
@@ -64,45 +58,10 @@ function extractVideo(array $args): array {
     return $data;
 }
 $action = $_GET['action'] ?? 'health';
-if ($action === 'health') reply(['service' => 'VibeTube media gateway', 'version' => 1,
+if ($action === 'health') reply(['service' => 'VibeTube media gateway', 'version' => 2,
     'runtime' => is_executable("$runtime/yt-dlp") && function_exists('proc_open'),
-    'accountSignIn' => false, 'experimental' => true]);
-if ($action === 'media') {
-    $token = $_GET['token'] ?? '';
-    if (!is_string($token) || !preg_match('/^[a-f0-9]{48}$/D', $token)) reply(['error' => 'Invalid media ticket.'], 400);
-    $file = "$runtime/tickets/$token.json";
-    $ticket = is_file($file) ? json_decode(file_get_contents($file), true) : null;
-    if (!$ticket || ($ticket['expires'] ?? 0) < time()) reply(['error' => 'Media ticket expired. Reload the video.'], 410);
-    if (!upstreamUrl($ticket['url'] ?? '')) reply(['error' => 'Invalid upstream.'], 502);
-    $range = $_SERVER['HTTP_RANGE'] ?? '';
-    if ($range !== '' && !preg_match('/^bytes=(?:[0-9]+-[0-9]*|-[0-9]+)$/D', $range)) reply(['error' => 'Use one byte range.'], 416);
-    $streamLock = null;
-    for ($i = 0; $i < 6; $i++) {
-        $f = fopen("$runtime/stream-$i.lock", 'c');
-        if ($f && flock($f, LOCK_EX | LOCK_NB)) { $streamLock = $f; break; }
-        if ($f) fclose($f);
-    }
-    if (!$streamLock) reply(['error' => 'All media streams are busy.'], 429);
-    set_time_limit(180);
-    while (ob_get_level()) ob_end_clean();
-    $status = 502;
-    $ch = curl_init($ticket['url']);
-    curl_setopt_array($ch, [CURLOPT_FOLLOWLOCATION => false, CURLOPT_CONNECTTIMEOUT => 12,
-        CURLOPT_TIMEOUT => 170, CURLOPT_PROTOCOLS => CURLPROTO_HTTPS, CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_HTTPHEADER => array_filter(['User-Agent: Mozilla/5.0', $range !== '' ? "Range: $range" : '']),
-        CURLOPT_NOBODY => $_SERVER['REQUEST_METHOD'] === 'HEAD',
-        CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$status) {
-            if (preg_match('/^HTTP\/\S+\s+(\d+)/', $line, $m)) {
-                $status = (int)$m[1]; http_response_code(in_array($status, [200,206,416], true) ? $status : 502);
-            } elseif (in_array($status, [200,206,416], true) && preg_match('/^(Content-Type|Content-Length|Content-Range|Accept-Ranges):/i', $line)) header(trim($line));
-            return strlen($line);
-        },
-        CURLOPT_WRITEFUNCTION => function ($ch, $bytes) use (&$status) {
-            if (!in_array($status, [200,206], true) || connection_aborted()) return 0;
-            echo $bytes; flush(); return strlen($bytes);
-        }]);
-    curl_exec($ch); curl_close($ch); flock($streamLock, LOCK_UN); fclose($streamLock); exit;
-}
+    'accountSignIn' => false, 'playback' => 'youtube-embed']);
+if (in_array($action, ['video', 'media'], true)) reply(['error' => 'Custom media playback has been retired. Use the standard YouTube player.'], 410);
 // Per-IP extraction rate limit; no user queries or IP addresses are persisted in plaintext.
 $bucket = "$runtime/rate-" . hash('sha256', $_SERVER['REMOTE_ADDR'] ?? 'unknown');
 $buckets = glob("$runtime/rate-*") ?: [];
@@ -115,6 +74,53 @@ if (time() - $rate['start'] > 60) $rate = ['start' => time(), 'count' => 0];
 $rate['count']++;
 ftruncate($f, 0); rewind($f); fwrite($f, json_encode($rate)); flock($f, LOCK_UN); fclose($f);
 if ($rate['count'] > 90) reply(['error' => 'Please wait before making more requests.'], 429);
+if ($action === 'avatar') {
+    $channel = $_GET['channel'] ?? '';
+    $video = $_GET['video'] ?? '';
+    if (!is_string($channel) || !is_string($video)) reply(['error' => 'Invalid channel.'], 400);
+    if ($channel !== '' && !preg_match('/^UC[\w-]{22}$/D', $channel)) reply(['error' => 'Invalid channel.'], 400);
+    if ($channel === '' && !preg_match('/^[\w-]{11}$/D', $video)) reply(['error' => 'Invalid video.'], 400);
+    $dir = "$runtime/avatars";
+    if (!is_dir($dir)) mkdir($dir, 0700);
+    $file = "$dir/" . ($channel !== '' ? $channel : $video) . '.json';
+    if (is_file($file)) {
+        $cached = json_decode(file_get_contents($file), true);
+        if (is_array($cached) && filemtime($file) > time() - (!empty($cached['url']) ? 86400 : 60)) reply($cached);
+    }
+    // Fetch metadata from fixed YouTube origins only; never accept a caller URL.
+    $fetch = function (string $url): ?string {
+        $body = '';
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_FOLLOWLOCATION => false, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 8,
+            CURLOPT_PROTOCOLS => CURLPROTO_HTTPS, CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_HTTPHEADER => ['Cookie: SOCS=CAI'], // Anonymous rejection of optional Google consent cookies; no account session.
+            CURLOPT_USERAGENT => 'Mozilla/5.0', CURLOPT_WRITEFUNCTION => function ($ch, $chunk) use (&$body) {
+                if (strlen($body) + strlen($chunk) > 4000000) return 0;
+                $body .= $chunk; return strlen($chunk);
+            }]);
+        $ok = curl_exec($ch); $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE); curl_close($ch);
+        return $ok && $status === 200 ? $body : null;
+    };
+    $path = $channel !== '' ? '/channel/' . $channel : null;
+    if (!$path) {
+        $meta = json_decode($fetch('https://www.youtube.com/oembed?url=' . rawurlencode('https://www.youtube.com/watch?v=' . $video) . '&format=json') ?? '', true);
+        $author = parse_url($meta['author_url'] ?? '');
+        if (($author['host'] ?? '') === 'www.youtube.com' && preg_match('~^/(?:@[^/?#]{1,200}|channel/UC[\w-]{22}|user/[\w.-]{1,100}|c/[\w.-]{1,100})$~D', $author['path'] ?? '')) $path = $author['path'];
+    }
+    $html = $path ? $fetch('https://www.youtube.com' . $path) : null;
+    $image = null;
+    if ($html && preg_match('~<meta\s+property="og:image"\s+content="([^"]+)"~i', $html, $m)) {
+        $candidate = html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $p = parse_url($candidate);
+        if (($p['scheme'] ?? '') === 'https' && in_array($p['host'] ?? '', ['yt3.googleusercontent.com', 'yt3.ggpht.com'], true) && !isset($p['user']) && !isset($p['pass']) && ($p['port'] ?? 443) === 443) $image = $candidate;
+    }
+    $payload = ['url' => $image];
+    $files = glob("$dir/*.json") ?: [];
+    usort($files, fn($a, $b) => filemtime($a) <=> filemtime($b));
+    while (count($files) >= 300) unlink(array_shift($files));
+    file_put_contents($file, json_encode($payload), LOCK_EX); chmod($file, 0600);
+    reply($payload);
+}
 if ($action === 'suggest') {
     $q = $_GET['q'] ?? '';
     if (!is_string($q) || mb_strlen(trim($q)) < 2 || mb_strlen($q) > 100) reply(['suggestions' => []]);
@@ -136,17 +142,18 @@ if ($action === 'search') {
     if ($page === false) reply(['error' => 'Invalid results page.'], 400);
     $searchDir = "$runtime/search";
     if (!is_dir($searchDir)) mkdir($searchDir, 0700);
-    $cache = "$searchDir/" . hash('sha256', 'v2:' . $page . ':' . trim($q)) . '.json';
+    $cache = "$searchDir/" . hash('sha256', 'v3:' . $page . ':' . trim($q)) . '.json';
     if (is_file($cache) && filemtime($cache) > time() - 300) {
         $cached = json_decode(file_get_contents($cache), true);
         if (is_array($cached)) reply($cached);
     }
-    $d = extractVideo(['--flat-playlist', '--playlist-start', (string)(($page - 1) * 20 + 1), 'ytsearch' . ($page * 20) . ':' . trim($q)]);
+    $d = extractSearch(['--flat-playlist', '--playlist-start', (string)(($page - 1) * 20 + 1), 'ytsearch' . ($page * 20) . ':' . trim($q)]);
     $items = [];
     foreach (array_slice($d['entries'] ?? [], 0, 20) as $v) {
         if (!preg_match('/^[\w-]{11}$/D', $v['id'] ?? '')) continue;
         $items[] = ['id' => $v['id'], 'title' => mb_substr($v['title'] ?? 'Video', 0, 300),
-            'channel' => mb_substr($v['channel'] ?? $v['uploader'] ?? 'YouTube', 0, 150), 'category' => 'Videos'];
+            'channel' => mb_substr($v['channel'] ?? $v['uploader'] ?? 'YouTube', 0, 150),
+            'channelId' => preg_match('/^UC[\w-]{22}$/D', $v['channel_id'] ?? '') ? $v['channel_id'] : null, 'category' => 'Videos'];
     }
     $files = glob("$searchDir/*.json") ?: [];
     usort($files, fn($a, $b) => filemtime($a) <=> filemtime($b));
@@ -156,21 +163,4 @@ if ($action === 'search') {
     chmod($cache, 0600);
     reply($payload);
 }
-if ($action !== 'video') reply(['error' => 'Unknown endpoint.'], 404);
-$id = $_GET['id'] ?? '';
-if (!is_string($id) || !preg_match('/^[\w-]{11}$/D', $id)) reply(['error' => 'Invalid video ID.'], 400);
-// Tickets are private, short lived and bounded; never expose an unrestricted URL proxy.
-$dir = "$runtime/tickets";
-if (!is_dir($dir)) mkdir($dir, 0700);
-$tickets = glob("$dir/*.json") ?: [];
-foreach ($tickets as $file) if (filemtime($file) < time() - 1800) unlink($file);
-if (count(glob("$dir/*.json") ?: []) >= 100) reply(['error' => 'Media ticket capacity reached. Try again later.'], 429);
-$d = extractVideo(['--format', 'best[ext=mp4][vcodec!=none][acodec!=none]', 'https://www.youtube.com/watch?v=' . $id]);
-if (!upstreamUrl($d['url'] ?? '')) reply(['error' => 'No compatible MP4 is available.'], 422);
-$token = bin2hex(random_bytes(24));
-file_put_contents("$dir/$token.json", json_encode(['url' => $d['url'], 'expires' => time() + 1800]), LOCK_EX);
-chmod("$dir/$token.json", 0600);
-reply(['id' => $id, 'title' => mb_substr($d['title'] ?? 'Video', 0, 300),
-    'channel' => mb_substr($d['channel'] ?? $d['uploader'] ?? 'YouTube', 0, 150),
-    'height' => $d['height'] ?? null, 'duration' => $d['duration'] ?? null,
-    'media' => 'api.php?action=media&token=' . $token, 'expiresIn' => 1800]);
+reply(['error' => 'Unknown endpoint.'], 404);

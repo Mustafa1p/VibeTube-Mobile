@@ -2,7 +2,6 @@ import { read } from "./storage";
 import type { Video } from "./data";
 
 export const gateway = "https://vibetubemobile.ipxer.online/api.php";
-export const backendEnabled = () => read("experimental-media", false);
 export const liveSearchEnabled = () => read("live-search", true);
 export async function backendRequest(
   action: string,
@@ -43,19 +42,6 @@ export async function backendRequest(
     clearTimeout(timer);
     signal?.removeEventListener("abort", cancel);
   }
-}
-export async function resolveMedia(id: string, signal: AbortSignal) {
-  if (!/^[\w-]{11}$/.test(id)) throw Error("Invalid video ID.");
-  const data = await backendRequest("video", { id }, signal);
-  const media = new URL(data.media, gateway);
-  if (
-    media.origin !== new URL(gateway).origin ||
-    media.pathname !== "/api.php" ||
-    media.searchParams.get("action") !== "media" ||
-    !/^[a-f0-9]{48}$/.test(media.searchParams.get("token") || "")
-  )
-    throw Error("The server returned an invalid media ticket.");
-  return { url: media.href, height: Number(data.height) || null };
 }
 export async function searchBackend(
   q: string,

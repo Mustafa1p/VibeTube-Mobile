@@ -1,34 +1,28 @@
-# VibeTube media gateway
+# VibeTube discovery gateway
 
-PHP 8.2+ with cURL and `proc_open`, Linux x86_64, and permission to execute private binaries are required. No persistent daemon, Google account, cookies, or YouTube Data API key is used.
+The gateway supplies search, query suggestions and channel-photo metadata. Videos play only in YouTube's standard iframe player. The earlier custom-media routes return HTTP 410 and are no longer used by the app.
 
-## Deployment
+## Setup
 
-1. Run `bash backend/install-runtime.sh` over SSH. It installs pinned yt-dlp 2026.08.19 and Node 22.23.3 under `$HOME/vibetube-runtime`, with release checksum checks. Keep this directory outside the document root and mode 0700. `TMPDIR` points here because shared-host `/tmp` can disallow executable mappings.
-2. Upload only `backend/api.php` to the subdomain document root. Its default runtime path fits this deployment's `domains/<domain>/public_html/<subdomain>` layout. For another layout, set `VIBETUBE_RUNTIME` in the PHP server environment to the private absolute runtime path.
-3. Confirm `api.php?action=health`, then run `python backend/verify.py` locally. A healthy runtime does **not** prove extraction or playback.
-4. Before enabling experimental video for users, resolve a public video, request the returned opaque media ticket with `Range: bytes=0-2047`, verify HTTP 206 and MP4 content, then test seeking and sustained playback on physical iPhone Safari/Home Screen. This deployment has **not** passed that requirement.
+Requires PHP 8.2+ with cURL and `proc_open`, Linux x86_64 and permission to execute private binaries. No Google account or YouTube Data API key is required.
 
-The frontend pins its gateway URL and CSP to `https://vibetubemobile.ipxer.online`. A different host requires updating both, rebuilding and republishing Pages. No SSH password belongs in GitHub, deployment scripts, environment files in this repo, or public PHP files.
+1. Run `bash backend/install-runtime.sh` over SSH. It installs checksum-verified yt-dlp 2026.08.19 and Node 22.23.3 under `$HOME/vibetube-runtime`. Keep the directory outside the document root, mode 0700. `TMPDIR` uses this directory because shared-host `/tmp` can disallow executable mappings.
+2. Upload `backend/api.php` to the subdomain document root. The default runtime path fits `domains/<domain>/public_html/<subdomain>`; other layouts should configure `VIBETUBE_RUNTIME` in the PHP server environment.
+3. Check `api.php?action=health` and run `python backend/verify.py`. Browser playback must be checked separately against YouTube's standard player.
+
+The frontend pins its gateway URL and CSP to `https://vibetubemobile.ipxer.online`. A new host requires updating both and republishing. Never store SSH credentials in this repo or public files.
 
 ## HTTP interface
 
 | Request | Behavior |
 | --- | --- |
-| `?action=health` | Runtime availability; not a playback readiness assertion |
-| `?action=search&q=...&page=1` | Up to 20 public-video results per page, pages 1–5; five-minute cache |
+| `?action=health` | Search runtime status and `playback: youtube-embed` |
+| `?action=search&q=...&page=1` | Up to 20 public videos per page, pages 1–5; five-minute cache; includes validated channel IDs |
 | `?action=suggest&q=...&lang=en` | Up to eight query suggestions from Google's YouTube autocomplete service |
-| `?action=video&id=...` | Resolve a strict 11-character ID to one compatible muxed MP4 ticket |
-| `?action=media&token=...` | Stream that private ticket, with single-byte-range support |
+| `?action=avatar&channel=UC...` | Public channel image URL from a strict channel ID |
+| `?action=avatar&video=...` | Channel image lookup for an older saved video via oEmbed |
+| `?action=video...` / `?action=media...` | HTTP 410: retired |
 
-The gateway never accepts caller-provided upstream URLs, Google cookies or authorization. Signed provider URLs stay in private files for 30 minutes. Streaming is restricted to HTTPS `*.googlevideo.com`, without redirects. TLS verification remains enabled. Browser CORS permits the Pages app, the supplied subdomain and local development. There are two extraction slots, six streaming slots, extraction timeouts, a per-IP rate limit and bounded search/ticket stores. These controls reduce abuse; CORS does not authenticate a public service. Hosting bandwidth and PHP worker limits still apply. Do not expose unrestricted yt-dlp commands or a generic proxy endpoint.
+Avatar requests fetch only fixed YouTube origins. The request uses an anonymous optional-cookie rejection preference to avoid the regional consent redirect; user Google cookies and account sessions are never accepted or copied. Returned images must use HTTPS on `yt3.googleusercontent.com` or `yt3.ggpht.com`. Successful metadata is cached for a day, unavailable images for one minute, with a 300-entry bound. The browser lazy-loads photos and keeps initials if lookup or image loading fails.
 
-## Deployment result — 2026-10-20
-
-- HTTPS endpoint, PHP runtime and checksum-verified extraction binaries: available.
-- Search: HTTP 200, eight Blender open-movie results, browser-origin CORS allowed.
-- Video resolution: HTTP 502. Both default and web-embedded extraction clients received YouTube's bot/sign-in rejection from this host.
-- Native media streaming from this host: **not verified**, because no media ticket could be resolved.
-- Local development machine: the same public Blender video resolved to a 360p AVC/AAC MP4, and a real upstream byte-range request returned HTTP 206. This proves a local extraction path only.
-
-Changing the PHP UI or adding API keys does not fix the observed hosting-IP rejection. A replacement runtime/network must pass the playback checks before making experimental video the default. The official embedded player remains the app's default.
+Search has two worker slots and bounded output/time limits. Query and avatar inputs are validated; the gateway exposes no arbitrary URL proxy, unrestricted extractor command, or account-cookie input. TLS verification stays enabled. CORS permits the Pages app, the supplied subdomain and local development; it does not authenticate a public service. Hosting worker, bandwidth and rate limits still apply.

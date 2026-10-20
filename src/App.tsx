@@ -13,7 +13,7 @@ import {
 import { usePlatform } from "./platform";
 const Videos = lazy(() => import("./VideoApp"));
 const base = import.meta.env.BASE_URL;
-const release = "3.2.0";
+const release = "3.3.0";
 export default function App() {
   const platform = usePlatform();
   const [device, setDevice] = useState(
@@ -337,9 +337,9 @@ export default function App() {
             Google receives player and thumbnail requests and may serve cookies
             and ads. VibeTube has no password form, analytics, or account
             server. GitHub serves the app and may retain hosting logs. The media
-            server is hosted at vibetubemobile.ipxer.online. Its experimental
-            video mode is off by default because YouTube rejected playback
-            extraction from the hosting IP during verification.
+            server is hosted at vibetubemobile.ipxer.online and supplies search
+            and channel-photo metadata. Playback uses only the standard YouTube
+            player.
           </p>
           <p>
             Playback and available controls depend on YouTube and the video's

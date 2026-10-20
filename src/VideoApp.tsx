@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Home,
   Library,
@@ -12,13 +12,14 @@ import {
   ArrowLeft,
   X,
 } from "lucide-react";
-import Player from "./Player";
+import Player, { warmPlayer, type PlayerHandle } from "./Player";
+import ChannelAvatar from "./ChannelAvatar";
 import { catalog, lookup, thumb, videoId } from "./data";
 import type { Video } from "./data";
 import { read, write } from "./storage";
 import "./video.css";
 import BackendSettings from "./BackendSettings";
-import { backendEnabled, liveSearchEnabled } from "./backend";
+import { liveSearchEnabled } from "./backend";
 import { useDiscovery } from "./useDiscovery";
 import SearchSuggestions from "./SearchSuggestions";
 const base = import.meta.env.BASE_URL;
@@ -42,11 +43,14 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
     ),
     [message, setMessage] = useState(""),
     [loading, setLoading] = useState(false),
-    [useBackend, setUseBackend] = useState(backendEnabled),
     [liveSearch, setLiveSearch] = useState(liveSearchEnabled),
     [searchTerm, setSearchTerm] = useState(""),
     [suggesting, setSuggesting] = useState(false),
     [allowed, setAllowed] = useState(() => read("video-consent", false));
+  const playerControl = useRef<PlayerHandle>(null);
+  useEffect(() => {
+    if (allowed) warmPlayer();
+  }, [allowed]);
   const topics: Record<string, string> = {
     All: "popular videos",
     Music: "official music video",
@@ -85,9 +89,7 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
     const c = new AbortController();
     setLoading(true);
     lookup(id, c.signal)
-      .then((v) =>
-        setActive({ ...v, provider: useBackend ? "backend" : undefined }),
-      )
+      .then(setActive)
       .catch((e) => {
         if (e.name !== "AbortError") setMessage(e.message);
       })
@@ -98,10 +100,11 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
       c.abort();
       setLoading(false);
     };
-  }, [route, active?.id, allowed, useBackend]);
+  }, [route, active?.id, allowed]);
   const watch = !!active && route === "watch/" + active.id;
   const play = (v: Video) => {
-    setActive({ ...v, provider: useBackend ? "backend" : undefined });
+    playerControl.current?.select(v);
+    setActive(v);
     nav("watch/" + v.id);
   };
   const save = (v: Video) => {
@@ -180,7 +183,7 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
           <img src={thumb(v)} alt="" loading="lazy" />
         </button>
         <div className="v-card-copy">
-          <span className="v-avatar">{v.channel[0]}</span>
+          <ChannelAvatar video={v} />
           <div>
             <button className="v-title" onClick={() => play(v)}>
               {v.title}
@@ -276,6 +279,7 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
         <>
           {active && (
             <Player
+              ref={playerControl}
               video={active}
               expanded={watch}
               onExpand={() => nav(watch ? "home" : "watch/" + active.id)}
@@ -284,11 +288,6 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
                 if (watch) nav("home");
               }}
               onStarted={started}
-              onUseEmbedded={() => {
-                write("experimental-media", false);
-                setUseBackend(false);
-                setActive({ ...active, provider: undefined });
-              }}
             />
           )}
           <main className="v-main">
@@ -343,7 +342,6 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
               <BackendSettings
                 onChange={() => {
                   setActive(null);
-                  setUseBackend(backendEnabled());
                   setLiveSearch(liveSearchEnabled());
                 }}
               />
@@ -351,6 +349,7 @@ export default function VideoApp({ onAbout }: { onAbout: () => void }) {
               <section className="v-watch">
                 <h1>{active.title}</h1>
                 <p className="v-meta">
+                  <ChannelAvatar video={active} />
                   {active.channel} · Playing inside VibeTube
                 </p>
                 <div className="v-watch-actions">
